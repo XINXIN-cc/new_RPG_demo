@@ -431,7 +431,7 @@ export class LearningHall extends Component {
       });
     }
     // 底部：易错字数
-    this.label(root, 'HallSugNote', `易错 ${weak.length} 字`, x - w / 2 + 20, y - h / 2 + 18, 120, 18, 12, new Color(216, 200, 168), 'left', 6);
+    this.label(root, 'HallSugNote', `易错 ${weak.length} 字`, x - w / 2 + 80, y - h / 2 + 18, 120, 18, 12, new Color(216, 200, 168), 'left', 6);
   }
 
   private drawCodexEntry(root: Node, total: number, collected: number, x: number, y: number, t: ReturnType<LearningHall['theme']>) {
@@ -457,7 +457,7 @@ export class LearningHall extends Component {
     }
     // 底部：左说明 + 右百分比，避免重叠
     const bottomY = y - h / 2 + 20;
-    this.label(root, 'HallCodexEntrySub', '已收集真实字形', x - w / 2 + 18, bottomY, 150, 18, 12, new Color(216, 200, 168), 'left', 6);
+    this.label(root, 'HallCodexEntrySub', '已收集真实字形', x - w / 2 + 93, bottomY, 150, 18, 12, new Color(216, 200, 168), 'left', 6);
     this.label(root, 'HallCodexEntryPct', `${Math.round(pct * 100)}%`, x + w / 2 - 18, bottomY, 50, 18, 12, new Color(216, 200, 168), 'right', 6);
   }
 
