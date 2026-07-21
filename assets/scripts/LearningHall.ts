@@ -483,7 +483,10 @@ export class LearningHall extends Component {
         const dot = this.graphics(root, `HallNavDot-${i}`, x, padY - r + 8, 12, 4, 6);
         dot.fillColor = new Color(255, 217, 138, 255); dot.roundRect(-6, -2, 12, 4, 2); dot.fill();
       }
-      this.label(root, `HallNavLabel-${i}`, label, x, padY - r - 12, 64, 18, 13, active ? new Color(122, 74, 20) : new Color(58, 36, 16), 'center', 6);
+      const navLabelColor = active
+        ? (t.night ? new Color(255, 233, 180) : new Color(122, 74, 20))
+        : (t.night ? new Color(230, 215, 180) : new Color(58, 36, 16));
+      this.label(root, `HallNavLabel-${i}`, label, x, padY - r - 12, 64, 18, 13, navLabelColor, 'center', 6);
     });
   }
 
