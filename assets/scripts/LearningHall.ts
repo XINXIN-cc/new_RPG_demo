@@ -755,20 +755,13 @@ export class LearningHall extends Component {
 
   private renderPlaceholder(mode: 'parent' | 'settings') {
     if (mode === 'settings') { this.drawSettingsPanel(); return; }
-    const root = this.createRoot('HallParentManagement', mode);
-    this.drawHeader(root, '家长管理', '管理功能将随学习报告系统一同开放', true);
-    this.panel(root, 'HallPlaceholderPanel', 0, -8, 900, 430, new Color(76, 57, 62), false);
-    const rows = [
-      ['学习报告', '查看本周学习字数与复习情况'],
-      ['时长设置', '设置每日学习目标与休息提醒'],
-      ['夜间限制', '设定可学习时间范围'],
-    ];
-    rows.forEach((row, index) => {
-      const y = 105 - index * 110;
-      this.button(root, `HallPlaceholder-${index}`, row[0], -270, y, 190, 64, false);
-      this.label(root, `HallPlaceholderDetail-${index}`, row[1], 115, y, 500, 52, 19, new Color(255, 231, 176), 'left');
-      this.label(root, `HallPlaceholderSoon-${index}`, '暂未启用', 360, y, 120, 30, 15, new Color(205, 204, 220));
-    });
+    // 错题本 = 家长端功能，后续单独开放，当前显示「功能未完善」
+    const root = this.createRoot('HallWrongBook', mode);
+    this.drawHeader(root, '错题本', '家长端功能 · 将随学习报告系统一同开放', true);
+    this.panel(root, 'HallWrongBookPanel', 0, -20, 760, 320, new Color(76, 57, 62), false);
+    this.label(root, 'HallWrongBookIcon', '⭐', 0, 78, 96, 96, 52, new Color(255, 233, 176), 'center', 6);
+    this.label(root, 'HallWrongBookTip', '功能未完善', 0, -8, 420, 56, 30, new Color(255, 240, 214), 'center', 6);
+    this.label(root, 'HallWrongBookDesc', '错题本为家长端功能，将随学习报告系统一同开放\n敬请期待～', 0, -82, 560, 60, 16, new Color(255, 231, 176), 'center', 6);
   }
 
   private drawSettingsPanel() {
