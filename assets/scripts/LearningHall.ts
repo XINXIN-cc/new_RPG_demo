@@ -538,20 +538,20 @@ export class LearningHall extends Component {
       row.lineWidth = isCur ? 2 : 1; row.roundRect(-215, -32, 430, 64, 11); row.stroke();
       // 图标圆形渐变背景（对齐 HTML .ric）
       const iconR = 22;
-      const iconX = -200;
+      const iconX = -192;
       const iconBg = this.graphics(root, `HallRankRowIcon-${i}`, iconX, y, iconR * 2, iconR * 2, 6);
       iconBg.fillColor = c1; iconBg.circle(0, 0, iconR); iconBg.fill();
       iconBg.strokeColor = this.hexToColor(rank.bd); iconBg.lineWidth = 1; iconBg.circle(0, 0, iconR - 0.5); iconBg.stroke();
       this.label(root, `HallRankRowIconEmoji-${i}`, rank.icon, iconX, y, iconR * 1.5, iconR * 1.5, iconR * 1.1, new Color(255, 248, 236), 'center', 7);
       // 名字 + 经验需求（对齐 HTML .rinfo，图标右侧垂直居中）
       const nameColor = isCur ? new Color(200, 62, 44) : (t.night ? new Color(255, 240, 214) : new Color(58, 36, 16));
-      this.label(root, `HallRankRowName-${i}`, rank.name, -60, y + 5, 220, 24, 15, nameColor, 'left', 6);
+      this.label(root, `HallRankRowName-${i}`, rank.name, -40, y + 3, 220, 24, 15, nameColor, 'left', 6);
       const req = (i === RANKS.length - 1) ? '150字全收集 + 经验12000' : `累计经验 ${rank.threshold}`;
-      this.label(root, `HallRankRowReq-${i}`, req, -50, y - 13, 240, 20, 10, t.night ? new Color(216, 200, 168) : new Color(106, 74, 42), 'left', 6);
+      this.label(root, `HallRankRowReq-${i}`, req, -30, y - 15, 240, 20, 10, t.night ? new Color(216, 200, 168) : new Color(106, 74, 42), 'left', 6);
       // 状态（对齐 HTML .rstate：当前红 / 已达成绿 / 未解锁灰）
       const state = isCur ? '当前' : (reached ? '已达成' : '未解锁');
       const stateColor = isCur ? new Color(200, 62, 44) : (reached ? new Color(90, 138, 58) : new Color(138, 122, 106));
-      this.label(root, `HallRankRowState-${i}`, state, 168, y - 2, 80, 24, 12, stateColor, 'center', 6);
+      this.label(root, `HallRankRowState-${i}`, state, 168, y - 4, 80, 24, 12, stateColor, 'center', 6);
     });
     this.button(root, 'HallRanksBack', '返回大厅', 0, -230, 220, 50, true);
   }
