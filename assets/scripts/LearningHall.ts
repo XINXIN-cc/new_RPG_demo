@@ -761,7 +761,6 @@ export class LearningHall extends Component {
     this.panel(root, 'HallWrongBookPanel', 0, -20, 760, 320, new Color(76, 57, 62), false);
     this.label(root, 'HallWrongBookIcon', '⭐', 0, 78, 96, 96, 52, new Color(255, 233, 176), 'center', 6);
     this.label(root, 'HallWrongBookTip', '功能未完善', 0, -8, 420, 56, 30, new Color(255, 240, 214), 'center', 6);
-    this.label(root, 'HallWrongBookDesc', '错题本为家长端功能，将随学习报告系统一同开放\n敬请期待～', 0, -82, 560, 60, 16, new Color(255, 231, 176), 'center', 6);
   }
 
   private drawSettingsPanel() {
