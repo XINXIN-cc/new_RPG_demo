@@ -4,8 +4,8 @@
   "imported": true,
   "uuid": "30686ddc-1d84-4f05-a89a-c7e25a162157",
   "files": [
-    ".json",
-    ".jpg"
+    ".jpg",
+    ".json"
   ],
   "subMetas": {
     "6c48a": {
@@ -93,13 +93,13 @@
           ],
           "nuv": [
             0,
-            1,
-            1,
+            0,
             1,
             0,
             0,
             1,
-            0
+            1,
+            1
           ],
           "minPos": [
             -1227,
