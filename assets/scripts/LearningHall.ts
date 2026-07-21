@@ -287,9 +287,9 @@ export class LearningHall extends Component {
     const rankIdx = this.currentRank();
     const collected = this.cards().filter(c => c.unlocked).length;
     const topY = this.vh(0.445);
-    // 头像改小（直径≈55px），避免压住右侧名字
-    const avR = this.vh(0.038);
-    const avX = -this.vw(0.430);
+    // 头像（直径≈58px），留足右侧空间
+    const avR = this.vh(0.040);
+    const avX = -this.vw(0.424);
     const glow = this.graphics(root, 'HallTopAvatarGlow', avX, topY, (avR + 6) * 2, (avR + 6) * 2, 4);
     glow.fillColor = new Color(255, 210, 140, 77); glow.circle(0, 0, avR + 5); glow.fill();
     const avBg = this.graphics(root, 'HallTopAvatarBg', avX, topY, avR * 2, avR * 2, 5);
@@ -300,10 +300,10 @@ export class LearningHall extends Component {
     const av = AVATARS.find(a => a.id === profile.avatarId) ?? AVATARS[0];
     this.label(root, 'HallTopAvatarEmoji', av.emoji, avX, topY, avR * 1.35, avR * 1.35, avR * 0.95, new Color(255, 233, 200), 'center', 6);
     // 左上：头像右侧上方名字，下方金棕胶囊段位 + 已识字数（严格不重叠）
-    const textLeft = avX + avR + 16;
-    this.label(root, 'HallPlayerName', profile.playerName || '少年卜官', textLeft, topY + 12, 220, 26, 18, t.ink, 'left', 6);
-    this.drawRankBadge(root, rankIdx, textLeft + 64, topY - 16, t);
-    this.label(root, 'HallCollectedHint', `已识 ${collected} 字`, textLeft + 148, topY - 16, 110, 22, 13, t.sub, 'left', 6);
+    const textStart = avX + avR + 14; // 文字块左边界，紧贴头像右边缘
+    this.label(root, 'HallPlayerName', profile.playerName || '少年卜官', textStart + 70, topY + 10, 140, 26, 17, t.ink, 'center', 6);
+    this.drawRankBadge(root, rankIdx, textStart + 54, topY - 18, t);
+    this.label(root, 'HallCollectedHint', `已识 ${collected} 字`, textStart + 54 + 54 + 6 + 45, topY - 18, 90, 22, 13, t.sub, 'center', 6);
     // 右侧货币（名+值一行，对齐 .rightbar .cur）+ 家长按钮
     this.drawCurrencies(root, progress, this.vw(0.150), topY, t);
     this.drawParentBtn(root, this.vw(0.422), topY, t);
@@ -312,13 +312,13 @@ export class LearningHall extends Component {
   private drawRankBadge(root: Node, rankIdx: number, x: number, y: number, t: ReturnType<LearningHall['theme']>) {
     // 固定金棕渐变（对齐 .rankbadge，不随段位变色）
     const rank = RANKS[rankIdx];
-    const w = 128, h = 28;
+    const w = 108, h = 26;
     const node = this.graphics(root, 'HallRankBadge', x, y, w, h, 6);
-    node.fillColor = new Color(168, 124, 64, 255); node.roundRect(-w / 2, -h / 2, w, h, 14); node.fill();
+    node.fillColor = new Color(168, 124, 64, 255); node.roundRect(-w / 2, -h / 2, w, h, 13); node.fill();
     node.fillColor = new Color(122, 84, 42, 230); node.roundRect(-w / 2, 2, w, h / 2 - 2, 0); node.fill();
-    node.strokeColor = new Color(255, 228, 165, 230); node.lineWidth = 1; node.roundRect(-w / 2, -h / 2, w, h, 14); node.stroke();
-    this.label(root, 'HallRankIcon', rank.icon, x - w / 2 + 18, y, 26, 26, 15, new Color(255, 248, 236), 'center', 7);
-    this.label(root, 'HallRankName', rank.name, x + 4, y, w - 30, 22, 13, new Color(255, 248, 236), 'left', 7);
+    node.strokeColor = new Color(255, 228, 165, 230); node.lineWidth = 1; node.roundRect(-w / 2, -h / 2, w, h, 13); node.stroke();
+    this.label(root, 'HallRankIcon', rank.icon, x - w / 2 + 16, y, 24, 24, 14, new Color(255, 248, 236), 'center', 7);
+    this.label(root, 'HallRankName', rank.name, x + 6, y, w - 28, 20, 12, new Color(255, 248, 236), 'left', 7);
   }
 
   private drawCurrencies(root: Node, progress: { ink: number; coins: number; experience: number }, startX: number, y: number, t: ReturnType<LearningHall['theme']>) {
