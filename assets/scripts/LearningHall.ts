@@ -743,6 +743,7 @@ export class LearningHall extends Component {
   }
 
   private drawSettingsPanel() {
+    // TODO: 头像当前使用 emoji 预设(AVATARS)，后期需接入本地上传：压缩图片→dataURL→save.avatar
     const root = this.createRoot('HallSettings', 'settings');
     const profile = this.callbacks!.getProfile();
     const t = this.theme();
@@ -766,7 +767,7 @@ export class LearningHall extends Component {
     const cur = AVATARS.find(a => a.id === profile.avatarId) ?? AVATARS[0];
     this.drawAvatarCircle(root, 'HallSetCurAvatar', 20, 214, 26, cur.emoji, true, t);
     AVATARS.forEach((av, i) => {
-      const x = 100 + i * 52;
+      const x = 100 + i * 56;
       this.drawAvatarCircle(root, `HallSetAvatar-${i}`, x, 214, 22, av.emoji, av.id === profile.avatarId, t);
     });
     this.label(root, 'HallSetNameLabel', '昵称', -198, 162, 120, 24, 13, t.ink, 'left', 7);
@@ -784,8 +785,6 @@ export class LearningHall extends Component {
     this.drawSettingsSection(root, 'HallSetSec4', 0, -208, 516, 84, t);
     this.drawSectionTitle(root, 'HallSetSec4Title', '关于游戏', -181, t);
     this.label(root, 'HallSetAboutText', '殷墟甲骨文学习工具 · 开发中\n版本 V3.1 · 新国风探索 RPG', 0, -216, 460, 44, 12, t.sub, 'center', 7);
-    // 返回大厅
-    this.button(root, 'HallSetBack', '返回大厅', 0, -282, 220, 50, true);
   }
 
   private drawSettingsSection(root: Node, name: string, x: number, y: number, w: number, h: number, t: ReturnType<LearningHall['theme']>) {
@@ -817,7 +816,7 @@ export class LearningHall extends Component {
   private drawNicknameInput(root: Node, name: string, x: number, y: number, t: ReturnType<LearningHall['theme']>) {
     const w = 240, h = 38;
     const bg = this.graphics(root, 'HallSetNameBg', x, y, w, h, 5);
-    bg.fillColor = new Color(255, 255, 255, 235); bg.roundRect(-w / 2, -h / 2, w, h, h / 2); bg.fill();
+    bg.fillColor = t.night ? new Color(40, 34, 28, 235) : new Color(255, 255, 255, 235); bg.roundRect(-w / 2, -h / 2, w, h, h / 2); bg.fill();
     bg.strokeColor = new Color(200, 160, 100, 220); bg.lineWidth = 2; bg.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, h / 2 - 1); bg.stroke();
     const editNode = new Node('HallSetNameEdit'); editNode.parent = root; editNode.setPosition(x, y, 7);
     editNode.addComponent(UITransform).setContentSize(w - 20, h - 10);
@@ -825,8 +824,13 @@ export class LearningHall extends Component {
     edit.string = name;
     edit.maxLength = 12;
     edit.fontSize = 16;
+    edit.fontColor = t.night ? new Color(255, 245, 220) : new Color(60, 40, 20);
     edit.placeholder = '输入昵称';
+    edit.placeholderFontSize = 14;
+    edit.placeholderFontColor = new Color(150, 130, 100, 180);
     edit.inputMode = EditBox.InputMode.SINGLE_LINE;
+    if (edit.textLabel) { edit.textLabel.horizontalAlign = Label.HorizontalAlign.LEFT; edit.textLabel.verticalAlign = Label.VerticalAlign.CENTER; }
+    if (edit.placeholderLabel) { edit.placeholderLabel.horizontalAlign = Label.HorizontalAlign.LEFT; edit.placeholderLabel.verticalAlign = Label.VerticalAlign.CENTER; }
     edit.editingDidEnded = (editbox: EditBox) => { this.callbacks?.setName(editbox.string); };
   }
 
@@ -869,12 +873,11 @@ export class LearningHall extends Component {
       return;
     }
     if (this.mode === 'settings') {
-      AVATARS.forEach((av, i) => { if (this.hit(x, y, 100 + i * 52, 214, 44, 44)) { this.callbacks?.setAvatar(av.id); this.render('settings'); } });
+      AVATARS.forEach((av, i) => { if (this.hit(x, y, 100 + i * 56, 214, 44, 44)) { this.callbacks?.setAvatar(av.id); this.render('settings'); } });
       if (this.hit(x, y, 212, 50, 46, 24)) { this.callbacks?.toggleMusic(); this.render('settings'); }
       else if (this.hit(x, y, 212, 14, 46, 24)) { this.callbacks?.toggleSfx(); this.render('settings'); }
       else if (this.hit(x, y, 212, -104, 46, 24)) { this.callbacks?.toggleNight(); this.render('settings'); }
       else if (this.hit(x, y, 252, 288, 30, 30)) this.render('home');
-      else if (this.hit(x, y, 0, -282, 220, 50)) this.render('home');
       return;
     }
     if (this.hit(x, y, 480, 286, 150, 48)) { this.render('home'); return; }
