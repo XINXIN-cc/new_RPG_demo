@@ -81,6 +81,7 @@ export class LearningHall extends Component {
   private reviewCorrect = 0;
   private reviewMistakes: HallCard[] = [];
   private reviewLibraryOpen = false;
+  private nameDialogOpen = false;
   private hiddenGameNodes: Node[] = [];
   private viewportScale = 1;
 
@@ -775,37 +776,39 @@ export class LearningHall extends Component {
     close.fillColor = t.night ? new Color(255, 210, 140, 40) : new Color(110, 76, 40, 40); close.roundRect(-15, -15, 30, 30, 15); close.fill();
     close.strokeColor = t.night ? new Color(255, 210, 140, 120) : new Color(110, 76, 40, 120); close.lineWidth = 1; close.roundRect(-14, -14, 28, 28, 14); close.stroke();
     this.label(root, 'HallSetCloseX', '✕', 252, 288, 20, 20, 16, t.ink, 'center', 7);
-    // sec1 头像与昵称（对齐 HTML 合并 section + .set-row 左标签右控件）
-    this.drawSettingsSection(root, 'HallSetSec1', 0, 196, 480, 156, t);
+    // sec1 头像与昵称
+    this.drawSettingsSection(root, 'HallSetSec1', 0, 196, 460, 156, t);
     this.drawSectionTitle(root, 'HallSetSec1Title', '头像与昵称', 258, t);
-    this.label(root, 'HallSetCurAvatarLabel', '当前头像', -176, 214, 120, 24, 13, t.ink, 'left', 7);
+    this.label(root, 'HallSetCurAvatarLabel', '当前头像', -158, 214, 120, 24, 13, t.ink, 'left', 7);
     const cur = AVATARS.find(a => a.id === profile.avatarId) ?? AVATARS[0];
-    this.drawAvatarCircle(root, 'HallSetCurAvatar', -10, 214, 22, cur.emoji, true, t, profile.avatarUrl);
+    this.drawAvatarCircle(root, 'HallSetCurAvatar', -30, 214, 22, cur.emoji, true, t, profile.avatarUrl);
     AVATARS.forEach((av, i) => {
-      const x = 44 + i * 44;
+      const x = 18 + i * 44;
       this.drawAvatarCircle(root, `HallSetAvatar-${i}`, x, 214, 18, av.emoji, av.id === profile.avatarId, t);
     });
     // 上传自定义头像按钮（+）
-    const uploadR = 18, uploadX = 44 + AVATARS.length * 44;
+    const uploadR = 18, uploadX = 18 + AVATARS.length * 44;
     const upNode = this.graphics(root, 'HallSetAvatarUpload', uploadX, 214, uploadR * 2, uploadR * 2, 5);
     upNode.fillColor = new Color(255, 250, 235, 255); upNode.circle(0, 0, uploadR); upNode.fill();
     upNode.strokeColor = new Color(180, 165, 145, 200); upNode.lineWidth = 2; upNode.circle(0, 0, uploadR - 2); upNode.stroke();
     this.label(root, 'HallSetAvatarUploadPlus', '+', uploadX, 214, uploadR * 2 - 6, uploadR * 2 - 6, 22, new Color(150, 120, 90), 'center', 6);
-    this.label(root, 'HallSetNameLabel', '昵称', -176, 162, 120, 24, 13, t.ink, 'left', 7);
-    this.drawNicknameInput(root, profile.playerName, 70, 162, t);
+    this.label(root, 'HallSetNameLabel', '昵称', -158, 162, 120, 24, 13, t.ink, 'left', 7);
+    this.drawNicknameRow(root, profile.playerName, 70, 162, t);
     // sec2 声音设置
-    this.drawSettingsSection(root, 'HallSetSec2', 0, 32, 480, 130, t);
+    this.drawSettingsSection(root, 'HallSetSec2', 0, 32, 460, 130, t);
     this.drawSectionTitle(root, 'HallSetSec2Title', '声音设置', 79, t);
-    this.drawToggle(root, 'music', '背景音乐', -136, 50, profile.musicOn, t);
-    this.drawToggle(root, 'sfx', '音效', -136, 14, profile.sfxOn, t);
+    this.drawToggle(root, 'music', '背景音乐', -118, 50, profile.musicOn, t);
+    this.drawToggle(root, 'sfx', '音效', -118, 14, profile.sfxOn, t);
     // sec3 显示
-    this.drawSettingsSection(root, 'HallSetSec3', 0, -104, 480, 84, t);
+    this.drawSettingsSection(root, 'HallSetSec3', 0, -104, 460, 84, t);
     this.drawSectionTitle(root, 'HallSetSec3Title', '显示', -77, t);
-    this.drawToggle(root, 'night', '夜间模式', -136, -104, profile.nightMode, t);
+    this.drawToggle(root, 'night', '夜间模式', -118, -104, profile.nightMode, t);
     // sec4 关于游戏
-    this.drawSettingsSection(root, 'HallSetSec4', 0, -208, 480, 84, t);
+    this.drawSettingsSection(root, 'HallSetSec4', 0, -208, 460, 84, t);
     this.drawSectionTitle(root, 'HallSetSec4Title', '关于游戏', -181, t);
     this.label(root, 'HallSetAboutText', '殷墟甲骨文学习工具 · 开发中\n版本 V3.1 · 新国风探索 RPG', 0, -216, 460, 44, 12, t.sub, 'center', 7);
+    // 昵称修改弹窗
+    if (this.nameDialogOpen) this.drawNameDialog(root, profile.playerName, t);
   }
 
   private drawSettingsSection(root: Node, name: string, x: number, y: number, w: number, h: number, t: ReturnType<LearningHall['theme']>) {
@@ -818,9 +821,9 @@ export class LearningHall extends Component {
 
   /** 小节标题：红左边框 + 文字（对齐 HTML .set-sec h4） */
   private drawSectionTitle(root: Node, name: string, text: string, y: number, t: ReturnType<LearningHall['theme']>) {
-    const bar = this.graphics(root, `${name}Bar`, -238, y, 3, 14, 7);
+    const bar = this.graphics(root, `${name}Bar`, -220, y, 3, 14, 7);
     bar.fillColor = new Color(200, 62, 44, 255); bar.roundRect(-1.5, -7, 3, 14, 1.5); bar.fill();
-    this.label(root, name, text, -136, y, 200, 22, 13, t.night ? new Color(255, 217, 138) : new Color(122, 74, 20), 'left', 7);
+    this.label(root, name, text, -118, y, 200, 22, 13, t.night ? new Color(255, 217, 138) : new Color(122, 74, 20), 'left', 7);
   }
 
   private drawAvatarCircle(root: Node, name: string, x: number, y: number, r: number, emoji: string, selected: boolean, t: ReturnType<LearningHall['theme']>, avatarUrl?: string) {
@@ -865,14 +868,37 @@ export class LearningHall extends Component {
     setTimeout(() => { if (input.parentNode) input.parentNode.removeChild(input); }, 1000);
   }
 
-  private drawNicknameInput(root: Node, name: string, x: number, y: number, t: ReturnType<LearningHall['theme']>) {
+  /** 设置页昵称展示行：点击后弹出编辑弹窗 */
+  private drawNicknameRow(root: Node, name: string, x: number, y: number, t: ReturnType<LearningHall['theme']>) {
     const w = 240, h = 38;
     const bg = this.graphics(root, 'HallSetNameBg', x, y, w, h, 5);
     bg.fillColor = t.night ? new Color(40, 34, 28, 235) : new Color(255, 255, 255, 235); bg.roundRect(-w / 2, -h / 2, w, h, h / 2); bg.fill();
     bg.strokeColor = new Color(200, 160, 100, 220); bg.lineWidth = 2; bg.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, h / 2 - 1); bg.stroke();
-    const editNode = new Node('HallSetNameEdit'); editNode.parent = root; editNode.setPosition(x, y, 7);
-    editNode.addComponent(UITransform).setContentSize(w - 20, h - 10);
+    this.label(root, 'HallSetNameValue', name, x, y, w - 20, h - 10, 16, t.night ? new Color(255, 245, 220) : new Color(60, 40, 20), 'center', 7);
+    this.label(root, 'HallSetNameHint', '点击修改', x + 78, y, 60, h - 10, 11, new Color(180, 150, 110, 180), 'center', 7);
+  }
+
+  /** 昵称编辑弹窗：输入框 + 取消/保存 */
+  private drawNameDialog(root: Node, currentName: string, t: ReturnType<LearningHall['theme']>) {
+    const dw = 420, dh = 200;
+    // 半透明遮罩（拦截点击）
+    const mask = this.graphics(root, 'HallNameDialogMask', 0, 0, 1280, 720, 20);
+    mask.fillColor = new Color(0, 0, 0, 160); mask.rect(-640, -360, 1280, 720); mask.fill();
+    // 面板
+    const panel = this.graphics(root, 'HallNameDialogPanel', 0, 0, dw, dh, 21);
+    panel.fillColor = t.night ? new Color(30, 24, 18, 245) : new Color(255, 248, 228, 245); panel.roundRect(-dw / 2, -dh / 2, dw, dh, 18); panel.fill();
+    panel.strokeColor = t.cardStroke; panel.lineWidth = 3; panel.roundRect(-dw / 2 + 2, -dh / 2 + 2, dw - 4, dh - 4, 15); panel.stroke();
+    this.label(root, 'HallNameDialogTitle', '修改昵称', 0, 68, 300, 32, 18, t.ink, 'center', 22);
+    // 输入框背景
+    const iw = 320, ih = 42, iy = 10;
+    const ibg = this.graphics(root, 'HallNameDialogInputBg', 0, iy, iw, ih, 22);
+    ibg.fillColor = t.night ? new Color(48, 40, 32, 255) : new Color(255, 255, 255, 255); ibg.roundRect(-iw / 2, -ih / 2, iw, ih, ih / 2); ibg.fill();
+    ibg.strokeColor = new Color(200, 160, 100, 220); ibg.lineWidth = 2; ibg.roundRect(-iw / 2 + 1, -ih / 2 + 1, iw - 2, ih - 2, ih / 2 - 1); ibg.stroke();
+    // EditBox
+    const editNode = new Node('HallNameDialogEdit'); editNode.parent = root; editNode.setPosition(0, iy, 23);
+    editNode.addComponent(UITransform).setContentSize(iw - 20, ih - 10);
     const edit = editNode.addComponent(EditBox) as EditBox;
+    edit.string = currentName;
     edit.maxLength = 12;
     edit.fontSize = 16;
     edit.fontColor = t.night ? new Color(255, 245, 220) : new Color(60, 40, 20);
@@ -880,7 +906,6 @@ export class LearningHall extends Component {
     edit.placeholderFontSize = 14;
     edit.placeholderFontColor = new Color(150, 130, 100, 180);
     edit.inputMode = EditBox.InputMode.SINGLE_LINE;
-    // 显式锁定 textLabel / placeholderLabel 的 transform 与对齐，避免文字漂移
     const textColor = edit.fontColor;
     if (edit.textLabel) {
       const tl = edit.textLabel;
@@ -888,7 +913,7 @@ export class LearningHall extends Component {
       tl.horizontalAlign = Label.HorizontalAlign.LEFT; tl.verticalAlign = Label.VerticalAlign.CENTER;
       tl.overflow = Label.Overflow.CLAMP; tl.enableWrapText = false;
       const tf = tl.node.getComponent(UITransform);
-      tf.setAnchorPoint(0, 0.5); tf.setContentSize(w - 36, h - 10); tl.node.setPosition(-(w - 20) / 2 + 8, 0, 0);
+      tf.setAnchorPoint(0, 0.5); tf.setContentSize(iw - 36, ih - 10); tl.node.setPosition(-(iw - 20) / 2 + 8, 0, 0);
     }
     if (edit.placeholderLabel) {
       const pl = edit.placeholderLabel;
@@ -896,10 +921,11 @@ export class LearningHall extends Component {
       pl.horizontalAlign = Label.HorizontalAlign.LEFT; pl.verticalAlign = Label.VerticalAlign.CENTER;
       pl.overflow = Label.Overflow.CLAMP; pl.enableWrapText = false;
       const pf = pl.node.getComponent(UITransform);
-      pf.setAnchorPoint(0, 0.5); pf.setContentSize(w - 36, h - 10); pl.node.setPosition(-(w - 20) / 2 + 8, 0, 0);
+      pf.setAnchorPoint(0, 0.5); pf.setContentSize(iw - 36, ih - 10); pl.node.setPosition(-(iw - 20) / 2 + 8, 0, 0);
     }
-    edit.string = name;
-    edit.editingDidEnded = (editbox: EditBox) => { this.callbacks?.setName(editbox.string); };
+    // 取消 / 保存按钮
+    this.button(root, 'HallNameDialogCancel', '取消', -90, -58, 120, 40, false, 22);
+    this.button(root, 'HallNameDialogSave', '保存', 90, -58, 120, 40, true, 22);
   }
 
   private drawToggle(root: Node, key: string, label: string, labelX: number, y: number, on: boolean, t: ReturnType<LearningHall['theme']>) {
@@ -941,9 +967,25 @@ export class LearningHall extends Component {
       return;
     }
     if (this.mode === 'settings') {
-      AVATARS.forEach((av, i) => { if (this.hit(x, y, 44 + i * 44, 214, 36, 36)) { this.callbacks?.setAvatar(av.id); this.render('settings'); } });
-      if (this.hit(x, y, 44 + AVATARS.length * 44, 214, 36, 36)) { this.uploadAvatar(); }
-      if (this.hit(x, y, 212, 50, 46, 24)) { this.callbacks?.toggleMusic(); this.render('settings'); }
+      if (this.nameDialogOpen) {
+        // 点击弹窗面板外区域或取消 → 关闭
+        if (!this.hit(x, y, 0, 0, 420, 200) || this.hit(x, y, -90, -58, 120, 40)) {
+          this.nameDialogOpen = false; this.render('settings'); return;
+        }
+        // 保存
+        if (this.hit(x, y, 90, -58, 120, 40)) {
+          const editNode = this.root?.getChildByName('HallNameDialogEdit');
+          const edit = editNode?.getComponent(EditBox);
+          const newName = edit?.string?.trim() || '少年卜官';
+          this.callbacks?.setName(newName);
+          this.nameDialogOpen = false; this.render('settings'); return;
+        }
+        return;
+      }
+      AVATARS.forEach((av, i) => { if (this.hit(x, y, 18 + i * 44, 214, 36, 36)) { this.callbacks?.setAvatar(av.id); this.render('settings'); } });
+      if (this.hit(x, y, 18 + AVATARS.length * 44, 214, 36, 36)) { this.uploadAvatar(); }
+      else if (this.hit(x, y, 70, 162, 240, 38)) { this.nameDialogOpen = true; this.render('settings'); }
+      else if (this.hit(x, y, 212, 50, 46, 24)) { this.callbacks?.toggleMusic(); this.render('settings'); }
       else if (this.hit(x, y, 212, 14, 46, 24)) { this.callbacks?.toggleSfx(); this.render('settings'); }
       else if (this.hit(x, y, 212, -104, 46, 24)) { this.callbacks?.toggleNight(); this.render('settings'); }
       else if (this.hit(x, y, 252, 288, 30, 30)) this.render('home');
@@ -1049,10 +1091,10 @@ export class LearningHall extends Component {
     panel.strokeColor = parchment ? new Color(91, 51, 31) : new Color(221, 167, 80); panel.lineWidth = 5; panel.roundRect(-width / 2 + 3, -height / 2 + 3, width - 6, height - 6, 12); panel.stroke();
   }
 
-  private button(parent: Node, name: string, text: string, x: number, y: number, width: number, height: number, accent: boolean) {
-    const button = this.graphics(parent, name, x, y, width, height, 4); button.fillColor = accent ? new Color(157, 64, 47, 245) : new Color(83, 62, 46, 245); button.roundRect(-width / 2, -height / 2, width, height, 10); button.fill();
+  private button(parent: Node, name: string, text: string, x: number, y: number, width: number, height: number, accent: boolean, z = 6) {
+    const button = this.graphics(parent, name, x, y, width, height, z - 1); button.fillColor = accent ? new Color(157, 64, 47, 245) : new Color(83, 62, 46, 245); button.roundRect(-width / 2, -height / 2, width, height, 10); button.fill();
     button.strokeColor = new Color(231, 187, 97); button.lineWidth = 3; button.roundRect(-width / 2, -height / 2, width, height, 10); button.stroke();
-    this.label(parent, `${name}Label`, text, x, y, width - 12, height - 8, 19, new Color(255, 238, 197), 'center', 6);
+    this.label(parent, `${name}Label`, text, x, y, width - 12, height - 8, 19, new Color(255, 238, 197), 'center', z);
   }
 
   private qualityColor(quality: HallCard['quality']) {
