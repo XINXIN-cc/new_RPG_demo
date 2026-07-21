@@ -283,41 +283,51 @@ export class LearningHall extends Component {
     const rankIdx = this.currentRank();
     const collected = this.cards().filter(c => c.unlocked).length;
     const topY = this.vh(0.445);            // ~320 in 720 design res
-    // 左侧头像（emoji 圆形垫）
-    const avR = this.vh(0.03);
-    const avBg = this.graphics(root, 'HallTopAvatarBg', -this.vw(0.426), topY, avR * 2, avR * 2, 5);
-    avBg.fillColor = new Color(212, 167, 106, 255); avBg.circle(0, 0, avR); avBg.fill();
-    avBg.strokeColor = new Color(200, 184, 152, 255); avBg.lineWidth = 2; avBg.circle(0, 0, avR - 2); avBg.stroke();
+    // 左侧头像（更大的 emoji 圆形垫，带金色光环）
+    const avR = this.vh(0.038);
+    const avX = -this.vw(0.426);
+    const ring = this.graphics(root, 'HallTopAvatarRing', avX, topY, (avR + 6) * 2, (avR + 6) * 2, 4);
+    ring.strokeColor = new Color(255, 195, 90, 220); ring.lineWidth = 3; ring.circle(0, 0, avR + 4); ring.stroke();
+    const avBg = this.graphics(root, 'HallTopAvatarBg', avX, topY, avR * 2, avR * 2, 5);
+    avBg.fillColor = new Color(235, 205, 155, 255); avBg.circle(0, 0, avR); avBg.fill();
+    avBg.strokeColor = new Color(180, 130, 70, 255); avBg.lineWidth = 3; avBg.circle(0, 0, avR - 2); avBg.stroke();
     const av = AVATARS.find(a => a.id === profile.avatarId) ?? AVATARS[0];
-    this.label(root, 'HallTopAvatarEmoji', av.emoji, -this.vw(0.426), topY, avR * 2 - 4, avR * 2 - 4, 20, new Color(255, 233, 200), 'center', 6);
-    this.label(root, 'HallPlayerName', profile.playerName || '少年卜官', -this.vw(0.385), this.vh(0.461), 200, 24, 16, t.ink, 'left', 6);
-    this.drawRankBadge(root, rankIdx, -this.vw(0.358), this.vh(0.420), t);
-    this.label(root, 'HallCollectedHint', `已识 ${collected} 字`, -this.vw(0.281), this.vh(0.420), 100, 20, 12, t.sub, 'left', 6);
+    this.label(root, 'HallTopAvatarEmoji', av.emoji, avX, topY, avR * 2 - 6, avR * 2 - 6, avR * 1.2, new Color(120, 80, 40), 'center', 6);
+    this.label(root, 'HallPlayerName', profile.playerName || '少年卜官', -this.vw(0.376), this.vh(0.461), 220, 30, 20, t.ink, 'left', 6);
+    this.drawRankBadge(root, rankIdx, -this.vw(0.352), this.vh(0.414), t);
+    this.label(root, 'HallCollectedHint', `已识 ${collected} 字`, -this.vw(0.268), this.vh(0.414), 120, 22, 13, t.sub, 'left', 6);
     // 右侧货币 + 家长
-    this.drawCurrencies(root, progress, this.vw(0.133), topY, t);
+    this.drawCurrencies(root, progress, this.vw(0.126), topY, t);
     this.drawParentBtn(root, this.vw(0.422), topY, t);
   }
 
   private drawRankBadge(root: Node, rankIdx: number, x: number, y: number, t: ReturnType<LearningHall['theme']>) {
     const rank = RANKS[rankIdx];
-    const w = 108, h = 24;
+    const w = 120, h = 28;
     const node = this.graphics(root, 'HallRankBadge', x, y, w, h, 6);
-    node.fillColor = this.hexToColor(rank.c1, 240); node.roundRect(-w / 2, -h / 2, w, h, 12); node.fill();
-    node.strokeColor = this.hexToColor(rank.bd, 235); node.lineWidth = 2; node.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 11); node.stroke();
-    this.label(root, 'HallRankIcon', rank.icon, x - w / 2 + 14, y, 22, 22, 14, new Color(255, 255, 255), 'center', 7);
-    this.label(root, 'HallRankName', rank.name, x + 5, y, w - 28, 20, 12, new Color(255, 248, 230), 'left', 7);
+    node.fillColor = this.hexToColor(rank.c1, 240); node.roundRect(-w / 2, -h / 2, w, h, 14); node.fill();
+    node.strokeColor = this.hexToColor(rank.bd, 235); node.lineWidth = 2; node.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 13); node.stroke();
+    this.label(root, 'HallRankIcon', rank.icon, x - w / 2 + 18, y, 26, 26, 16, new Color(255, 255, 255), 'center', 7);
+    this.label(root, 'HallRankName', rank.name, x + 6, y, w - 32, 22, 13, new Color(255, 248, 230), 'left', 7);
   }
 
   private drawCurrencies(root: Node, progress: { ink: number; coins: number; experience: number }, startX: number, y: number, t: ReturnType<LearningHall['theme']>) {
-    const items: Array<[string, number]> = [
-      ['墨料', progress.ink],
-      ['贝币', progress.coins],
-      ['卜官经验', progress.experience],
+    const items: Array<[string, string, number, Color]> = [
+      ['墨料', '🖌', progress.ink, new Color(90, 70, 50)],
+      ['贝币', '🐚', progress.coins, new Color(90, 70, 50)],
+      ['经验', '⭐', progress.experience, new Color(90, 70, 50)],
     ];
-    items.forEach(([name, val], i) => {
-      const x = startX + i * 120;
-      this.label(root, `HallCurName-${i}`, name, x, y, 44, 20, 12, t.sub, 'left', 6);
-      this.label(root, `HallCurVal-${i}`, `${val}`, x + 44, y, 62, 20, 14, t.ink, 'left', 6);
+    items.forEach(([name, icon, val], i) => {
+      const x = startX + i * 130;
+      const w = 116, h = 34;
+      const cap = this.graphics(root, `HallCurCapsule-${i}`, x, y, w, h, 5);
+      cap.fillColor = t.night ? new Color(30, 24, 20, 200) : new Color(255, 248, 230, 220);
+      cap.roundRect(-w / 2, -h / 2, w, h, 17); cap.fill();
+      cap.strokeColor = t.night ? new Color(255, 200, 100, 160) : new Color(180, 140, 90, 200);
+      cap.lineWidth = 2; cap.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 16); cap.stroke();
+      this.label(root, `HallCurIcon-${i}`, icon, x - 36, y, 26, 26, 16, t.ink, 'center', 7);
+      this.label(root, `HallCurName-${i}`, name, x - 10, y, 40, 20, 12, t.sub, 'left', 7);
+      this.label(root, `HallCurVal-${i}`, `${val}`, x + 26, y, 44, 22, 16, t.ink, 'left', 7);
     });
   }
 
@@ -334,90 +344,101 @@ export class LearningHall extends Component {
     const rankIdx = this.currentRank();
     const w = this.vh(0.22), h = this.vh(0.30);
     const node = this.graphics(root, 'HallCharacterCard', x, y, w, h, 3);
-    node.fillColor = new Color(28, 24, 18, 168); node.roundRect(-w / 2, -h / 2, w, h, 14); node.fill();
-    node.strokeColor = new Color(255, 215, 150, 66); node.lineWidth = 1; node.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 13); node.stroke();
+    node.fillColor = t.night ? new Color(32, 26, 48, 205) : new Color(255, 250, 238, 228);
+    node.roundRect(-w / 2, -h / 2, w, h, 14); node.fill();
+    node.strokeColor = t.cardStroke; node.lineWidth = 2; node.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 13); node.stroke();
     const av = AVATARS.find(a => a.id === profile.avatarId) ?? AVATARS[0];
-    this.label(root, 'HallCharEmoji', av.emoji, x, y + this.vh(0.102), 120, 80, 52, new Color(255, 230, 189), 'center', 6);
-    this.label(root, 'HallCharName', '殷墟小卜官', x, y + this.vh(0.050), 150, 22, 14, new Color(255, 230, 189), 'center', 6);
+    const avR = this.vh(0.055);
+    const avY = y + this.vh(0.100);
+    const ring = this.graphics(root, 'HallCharAvatarRing', x, avY, (avR + 5) * 2, (avR + 5) * 2, 4);
+    ring.strokeColor = new Color(255, 195, 90, 200); ring.lineWidth = 3; ring.circle(0, 0, avR + 3); ring.stroke();
+    const avBg = this.graphics(root, 'HallCharAvatarBg', x, avY, avR * 2, avR * 2, 5);
+    avBg.fillColor = new Color(255, 245, 220, 255); avBg.circle(0, 0, avR); avBg.fill();
+    avBg.strokeColor = new Color(180, 130, 70, 255); avBg.lineWidth = 3; avBg.circle(0, 0, avR - 2); avBg.stroke();
+    this.label(root, 'HallCharEmoji', av.emoji, x, avY, avR * 2 - 6, avR * 2 - 6, avR * 1.15, new Color(120, 80, 40), 'center', 6);
+    this.label(root, 'HallCharName', profile.playerName || '少年卜官', x, y + this.vh(0.028), 170, 24, 18, t.ink, 'center', 6);
+    this.label(root, 'HallCharRole', '殷墟小卜官', x, y + this.vh(0.002), 150, 18, 12, t.sub, 'center', 6);
     const nextRank = RANKS[Math.min(rankIdx + 1, RANKS.length - 1)];
     const need = Math.max(0, nextRank.threshold - this.progress().experience);
     const rankTip = rankIdx >= RANKS.length - 1 ? '已达最高段位' : `距${nextRank.name}还需 ${need} 经验`;
-    this.label(root, 'HallCharRankTip', rankTip, x, y + this.vh(0.030), 150, 18, 10, new Color(230, 216, 188), 'center', 6);
+    this.label(root, 'HallCharRankTip', rankTip, x, y - this.vh(0.034), 170, 20, 12, t.sub, 'center', 6);
     // 段位经验条
     const prevThreshold = RANKS[rankIdx].threshold;
     const pct = rankIdx >= RANKS.length - 1 ? 1 : Math.min(1, Math.max(0, (this.progress().experience - prevThreshold) / (nextRank.threshold - prevThreshold)));
-    const barW = this.vh(0.18), barH = 5;
-    const barY = y + this.vh(0.010);
+    const barW = this.vh(0.18), barH = 8;
+    const barY = y - this.vh(0.054);
     const barBg = this.graphics(root, 'HallCharRankBarBg', x, barY, barW, barH, 5);
-    barBg.fillColor = new Color(70, 55, 40, 128); barBg.roundRect(-barW / 2, -barH / 2, barW, barH, 3); barBg.fill();
+    barBg.fillColor = new Color(70, 55, 40, 128); barBg.roundRect(-barW / 2, -barH / 2, barW, barH, 4); barBg.fill();
     if (pct > 0) {
       const barFill = this.graphics(root, 'HallCharRankBarFill', x - barW / 2 + (barW * pct) / 2, barY, barW * pct, barH, 6);
-      barFill.fillColor = new Color(217, 168, 90, 255); barFill.roundRect(-(barW * pct) / 2, -barH / 2, barW * pct, barH, 3); barFill.fill();
+      barFill.fillColor = new Color(255, 190, 90, 255); barFill.roundRect(-(barW * pct) / 2, -barH / 2, barW * pct, barH, 4); barFill.fill();
     }
-    this.label(root, 'HallCharHint', '点击查看五阶段位 ▾', x, y - this.vh(0.011), 150, 16, 10, new Color(230, 216, 188), 'center', 6);
+    this.label(root, 'HallCharHint', '点击查看五阶段位', x, y - this.vh(0.090), 160, 18, 11, t.sub, 'center', 6);
   }
 
   private drawEnterYinXu(root: Node, x: number, y: number, t: ReturnType<LearningHall['theme']>) {
     const r = this.vh(0.10);
-    this.label(root, 'HallEnterSupertitle', '殷商寻字', x, y + r + this.vh(0.022), 280, 26, 16, t.ink, 'center', 6);
-    // 外发光环
-    const glow = this.graphics(root, 'HallEnterGlow', x, y, (r + 8) * 2, (r + 8) * 2, 3);
-    glow.fillColor = new Color(0, 0, 0, 64); glow.circle(0, 0, r + 8); glow.fill();
+    this.label(root, 'HallEnterSupertitle', '殷商寻字', x, y + r + this.vh(0.028), 280, 30, 20, t.ink, 'center', 6);
+    // 外发光环（呼吸感）
+    const glow = this.graphics(root, 'HallEnterGlow', x, y, (r + 10) * 2, (r + 10) * 2, 3);
+    glow.fillColor = new Color(255, 120, 80, 45); glow.circle(0, 0, r + 10); glow.fill();
     const node = this.graphics(root, 'HallEnterYinXu', x, y, r * 2, r * 2, 4);
-    node.fillColor = new Color(232, 90, 68, 255); node.circle(0, 0, r); node.fill();
-    // 渐变模拟：内圈稍暗
-    node.fillColor = new Color(200, 62, 44, 220); node.circle(0, 0, r - 16); node.fill();
-    node.strokeColor = new Color(255, 242, 216, 255); node.lineWidth = 3; node.circle(0, 0, r - 3); node.stroke();
-    this.label(root, 'HallEnterEmoji', '🏛', x, y + this.vh(0.014), 60, 46, 26, new Color(255, 242, 216), 'center', 6);
-    this.label(root, 'HallEnterTitle', '进入殷墟', x, y - this.vh(0.025), 140, 20, 12, new Color(255, 240, 220), 'center', 6);
-    this.label(root, 'HallEnterSub', '探索草野河畔，发掘甲骨遗存', x, y - r - this.vh(0.020), 360, 20, 11, t.sub, 'center', 6);
+    node.fillColor = new Color(210, 70, 55, 255); node.circle(0, 0, r); node.fill();
+    node.fillColor = new Color(180, 50, 40, 220); node.circle(0, 0, r - 18); node.fill();
+    node.strokeColor = new Color(255, 235, 190, 255); node.lineWidth = 4; node.circle(0, 0, r - 3); node.stroke();
+    this.label(root, 'HallEnterEmoji', '🏛', x, y + this.vh(0.016), 64, 50, 30, new Color(255, 242, 216), 'center', 6);
+    this.label(root, 'HallEnterTitle', '进入殷墟', x, y - this.vh(0.028), 150, 24, 14, new Color(255, 240, 220), 'center', 6);
+    this.label(root, 'HallEnterSub', '探索草野河畔，发掘甲骨遗存', x, y - r - this.vh(0.018), 420, 22, 12, t.sub, 'center', 6);
   }
 
   private drawReviewSuggestion(root: Node, x: number, y: number, t: ReturnType<LearningHall['theme']>) {
     const weakIds = this.callbacks?.getWeakCards() ?? [];
     const weak = weakIds.map(id => this.cards().find(c => c.id === id)).filter((c): c is HallCard => !!c).slice(0, 3);
-    const w = 340, h = 128;
+    const w = 340, h = 132;
     const node = this.graphics(root, 'HallReviewSug', x, y, w, h, 3);
-    node.fillColor = new Color(28, 24, 18, 168); node.roundRect(-w / 2, -h / 2, w, h, 10); node.fill();
-    node.strokeColor = new Color(255, 215, 150, 66); node.lineWidth = 1; node.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 9); node.stroke();
-    // badge "复习"
-    const badge = this.graphics(root, 'HallSugBadge', x - w / 2 + 34, y + h / 2 - 16, 42, 16, 6);
-    badge.fillColor = new Color(168, 124, 64, 255); badge.roundRect(-21, -8, 42, 16, 3); badge.fill();
-    this.label(root, 'HallSugBadgeTxt', '复习', x - w / 2 + 34, y + h / 2 - 16, 40, 14, 9, new Color(255, 233, 200), 'center', 7);
-    this.label(root, 'HallSugTitle', '建议复习', x - w / 2 + 22, y + h / 2 - 42, 120, 20, 14, new Color(255, 240, 214), 'left', 6);
+    node.fillColor = t.night ? new Color(32, 26, 48, 205) : new Color(255, 250, 238, 228);
+    node.roundRect(-w / 2, -h / 2, w, h, 12); node.fill();
+    node.strokeColor = t.cardStroke; node.lineWidth = 2; node.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 11); node.stroke();
+    // 标题区：带金色竖条
+    const titleBar = this.graphics(root, 'HallSugTitleBar', x - w / 2 + 20, y + h / 2 - 22, 4, 18, 6);
+    titleBar.fillColor = new Color(255, 180, 70, 255); titleBar.roundRect(-2, -9, 4, 18, 2); titleBar.fill();
+    this.label(root, 'HallSugTitle', '建议复习', x - w / 2 + 42, y + h / 2 - 22, 120, 24, 17, t.ink, 'left', 6);
+    this.label(root, 'HallSugNote', `易错 ${weak.length} 字`, x + w / 2 - 80, y + h / 2 - 22, 90, 20, 12, t.sub, 'right', 6);
     // chips
     if (weak.length === 0) {
-      this.label(root, 'HallSugEmpty', '暂无需复习', x, y - 6, w - 40, 22, 11, new Color(216, 200, 168), 'center', 6);
+      this.label(root, 'HallSugEmpty', '暂无需复习', x, y - 8, w - 40, 24, 13, t.sub, 'center', 6);
     } else {
       weak.forEach((card, i) => {
         const cx = x - 104 + i * 104;
-        const chip = this.graphics(root, `HallSugChip-${i}`, cx, y - 6, 88, 32, 6);
-        chip.fillColor = new Color(70, 55, 40, 153); chip.roundRect(-44, -16, 88, 32, 5); chip.fill();
-        chip.strokeColor = new Color(255, 215, 150, 46); chip.lineWidth = 1; chip.roundRect(-43, -15, 86, 30, 4); chip.stroke();
-        this.oracleGlyph(root, `HallSugGlyph-${i}`, card, cx, y - 6, 30, 28, 6);
+        const chip = this.graphics(root, `HallSugChip-${i}`, cx, y - 10, 90, 38, 6);
+        chip.fillColor = new Color(70, 55, 40, 160); chip.roundRect(-45, -19, 90, 38, 8); chip.fill();
+        chip.strokeColor = new Color(255, 215, 150, 80); chip.lineWidth = 2; chip.roundRect(-43, -17, 86, 34, 6); chip.stroke();
+        this.oracleGlyph(root, `HallSugGlyph-${i}`, card, cx, y - 10, 32, 30, 6);
       });
     }
-    this.label(root, 'HallSugNote', `易错 ${weak.length} 字`, x - w / 2 + 22, y - h / 2 + 20, 90, 16, 11, new Color(216, 200, 168), 'left', 6);
-    this.button(root, 'HallSugGo', '去复习 ›', x + w / 2 - 54, y - h / 2 + 20, 80, 28, true);
+    this.button(root, 'HallSugGo', '去复习 ›', x + w / 2 - 56, y - h / 2 + 22, 86, 30, true);
   }
 
   private drawCodexEntry(root: Node, total: number, collected: number, x: number, y: number, t: ReturnType<LearningHall['theme']>) {
-    const w = 340, h = 108;
+    const w = 340, h = 112;
     const node = this.graphics(root, 'HallCodexEntry', x, y, w, h, 3);
-    node.fillColor = new Color(28, 24, 18, 168); node.roundRect(-w / 2, -h / 2, w, h, 10); node.fill();
-    node.strokeColor = new Color(255, 215, 150, 66); node.lineWidth = 1; node.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 9); node.stroke();
-    this.label(root, 'HallCodexEntryTitle', '图鉴进度', x - w / 2 + 18, y + h / 2 - 22, 120, 20, 14, new Color(255, 240, 214), 'left', 6);
-    this.label(root, 'HallCodexEntryCount', `${collected} / ${total}`, x + w / 2 - 18, y + h / 2 - 22, 90, 22, 16, new Color(255, 240, 214), 'right', 6);
-    const barW = 300, barH = 5; const pct = total > 0 ? collected / total : 0;
+    node.fillColor = t.night ? new Color(32, 26, 48, 205) : new Color(255, 250, 238, 228);
+    node.roundRect(-w / 2, -h / 2, w, h, 12); node.fill();
+    node.strokeColor = t.cardStroke; node.lineWidth = 2; node.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 11); node.stroke();
+    const titleBar = this.graphics(root, 'HallCodexTitleBar', x - w / 2 + 20, y + h / 2 - 22, 4, 18, 6);
+    titleBar.fillColor = new Color(255, 180, 70, 255); titleBar.roundRect(-2, -9, 4, 18, 2); titleBar.fill();
+    this.label(root, 'HallCodexEntryTitle', '图鉴进度', x - w / 2 + 42, y + h / 2 - 22, 120, 24, 17, t.ink, 'left', 6);
+    this.label(root, 'HallCodexEntryCount', `${collected} / ${total}`, x + w / 2 - 18, y + h / 2 - 22, 90, 26, 20, t.ink, 'right', 6);
+    const barW = 300, barH = 8; const pct = total > 0 ? collected / total : 0;
     const barY = y + 2;
     const barBg = this.graphics(root, 'HallCodexBarBg', x, barY, barW, barH, 5);
-    barBg.fillColor = new Color(70, 55, 40, 128); barBg.roundRect(-barW / 2, -barH / 2, barW, barH, 3); barBg.fill();
+    barBg.fillColor = new Color(70, 55, 40, 128); barBg.roundRect(-barW / 2, -barH / 2, barW, barH, 4); barBg.fill();
     if (pct > 0) {
       const barFill = this.graphics(root, 'HallCodexBarFill', x - barW / 2 + (barW * pct) / 2, barY, barW * pct, barH, 6);
-      barFill.fillColor = new Color(217, 168, 90, 255); barFill.roundRect(-(barW * pct) / 2, -barH / 2, barW * pct, barH, 3); barFill.fill();
+      barFill.fillColor = new Color(120, 190, 120, 255); barFill.roundRect(-(barW * pct) / 2, -barH / 2, barW * pct, barH, 4); barFill.fill();
     }
-    this.label(root, 'HallCodexEntryPct', `${Math.round(pct * 100)}%`, x + w / 2 - 18, barY, 50, 16, 11, new Color(216, 200, 168), 'right', 6);
-    this.label(root, 'HallCodexEntrySub', '已收集真实字形', x - w / 2 + 18, y - h / 2 + 18, 140, 16, 11, new Color(216, 200, 168), 'left', 6);
+    this.label(root, 'HallCodexEntryPct', `${Math.round(pct * 100)}%`, x + w / 2 - 18, barY - 22, 50, 18, 12, t.sub, 'right', 6);
+    this.label(root, 'HallCodexEntrySub', '已收集真实字形', x - w / 2 + 18, y - h / 2 + 18, 150, 18, 12, t.sub, 'left', 6);
   }
 
   private drawBottomNav(root: Node, mode: HallMode, t: ReturnType<LearningHall['theme']>) {
@@ -429,22 +450,22 @@ export class LearningHall extends Component {
       ['progress', '📈', '进度', mode === 'progress'],
       ['settings', '⚙', '设置', mode === 'settings'],
     ];
-    const y = -this.vh(0.448); const gap = this.vh(0.122); const startX = -this.vh(0.306);
+    const y = -this.vh(0.456); const gap = this.vh(0.118); const startX = -this.vh(0.295);
     items.forEach(([m, icon, label, active], i) => {
       const x = startX + i * gap;
-      const r = this.vh(0.056);
-      // 图标圆垫（亮化）
-      const pad = this.graphics(root, `HallNavPad-${i}`, x, y + this.vh(0.008), r * 2, r * 2, 5);
-      const padColor = active ? new Color(255, 233, 176, 255) : new Color(255, 247, 230, 255);
+      const r = this.vh(0.044);
+      // 图标圆垫（更小但信息更密）
+      const pad = this.graphics(root, `HallNavPad-${i}`, x, y + this.vh(0.006), r * 2, r * 2, 5);
+      const padColor = active ? new Color(255, 220, 140, 255) : new Color(255, 250, 235, 240);
       pad.fillColor = padColor; pad.circle(0, 0, r); pad.fill();
-      pad.strokeColor = new Color(110, 74, 40, 255); pad.lineWidth = 2; pad.circle(0, 0, r - 2); pad.stroke();
-      this.label(root, `HallNavIcon-${i}`, icon, x, y + this.vh(0.008), r * 2 - 4, r * 2 - 4, 16, new Color(80, 60, 40), 'center', 6);
+      pad.strokeColor = active ? new Color(180, 120, 40, 255) : new Color(120, 90, 60, 200); pad.lineWidth = active ? 3 : 2; pad.circle(0, 0, r - 2); pad.stroke();
+      this.label(root, `HallNavIcon-${i}`, icon, x, y + this.vh(0.006), r * 2 - 4, r * 2 - 4, 22, new Color(80, 60, 40), 'center', 6);
       // 选中指示点
       if (active) {
-        const dot = this.graphics(root, `HallNavDot-${i}`, x, y + this.vh(0.047), 18, 4, 6);
-        dot.fillColor = new Color(255, 217, 138, 255); dot.roundRect(-9, -2, 18, 4, 2); dot.fill();
+        const dot = this.graphics(root, `HallNavDot-${i}`, x, y + this.vh(0.038), 18, 4, 6);
+        dot.fillColor = new Color(255, 200, 90, 255); dot.roundRect(-9, -2, 18, 4, 2); dot.fill();
       }
-      this.label(root, `HallNavLabel-${i}`, label, x, y - this.vh(0.033), 60, 16, 11, t.ink, 'center', 6);
+      this.label(root, `HallNavLabel-${i}`, label, x, y - this.vh(0.030), 64, 18, 13, t.ink, 'center', 6);
     });
   }
 
@@ -454,23 +475,27 @@ export class LearningHall extends Component {
     const t = this.theme();
     const mask = this.graphics(root, 'HallRanksMask', 0, 0, 1180, 680, 1);
     mask.fillColor = new Color(8, 8, 16, 180); mask.rect(-590, -340, 1180, 680); mask.fill();
-    const panel = this.graphics(root, 'HallRanksPanel', 0, 0, 560, 560, 3);
-    panel.fillColor = t.card; panel.roundRect(-280, -280, 560, 560, 24); panel.fill();
-    panel.strokeColor = t.cardStroke; panel.lineWidth = 4; panel.roundRect(-277, -277, 554, 554, 21); panel.stroke();
-    this.label(root, 'HallRanksTitle', '五阶卜官', 0, 234, 400, 40, 28, t.ink, 'center', 6);
+    const pw = 560, ph = 600;
+    const panel = this.graphics(root, 'HallRanksPanel', 0, 0, pw, ph, 3);
+    panel.fillColor = t.night ? new Color(38, 32, 56, 245) : new Color(250, 242, 228, 248);
+    panel.roundRect(-pw / 2, -ph / 2, pw, ph, 24); panel.fill();
+    panel.strokeColor = t.cardStroke; panel.lineWidth = 4; panel.roundRect(-pw / 2 + 2, -ph / 2 + 2, pw - 4, ph - 4, 21); panel.stroke();
+    this.label(root, 'HallRanksTitle', '五阶卜官', 0, ph / 2 - 44, 400, 40, 32, t.ink, 'center', 6);
+    const titleLine = this.graphics(root, 'HallRanksTitleLine', 0, ph / 2 - 70, 80, 3, 6);
+    titleLine.fillColor = new Color(255, 180, 70, 255); titleLine.roundRect(-40, -1.5, 80, 3, 1.5); titleLine.fill();
     RANKS.forEach((rank, i) => {
-      const y = 170 - i * 92;
-      const w = 480, h = 76;
+      const y = ph / 2 - 116 - i * 96;
+      const w = 480, h = 84;
       const reached = i <= rankIdx;
       const node = this.graphics(root, `HallRankRow-${i}`, 0, y, w, h, 5);
       node.fillColor = reached ? this.hexToColor(rank.c1, 240) : new Color(70, 70, 84, 180);
-      node.roundRect(-w / 2, -h / 2, w, h, 16); node.fill();
-      node.strokeColor = reached ? this.hexToColor(rank.bd, 255) : new Color(120, 120, 140); node.lineWidth = 2; node.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 15); node.stroke();
-      this.label(root, `HallRankRowIcon-${i}`, rank.icon, -w / 2 + 40, y, 48, 48, 28, new Color(255, 255, 255), 'center', 6);
-      this.label(root, `HallRankRowName-${i}`, rank.name, -w / 2 + 80, y + 14, 300, 30, 22, new Color(255, 248, 232), 'left', 6);
-      this.label(root, `HallRankRowReq-${i}`, reached ? '已达成' : `需 ${rank.threshold} 经验`, -w / 2 + 80, y - 16, 300, 22, 14, new Color(235, 230, 210), 'left', 6);
+      node.roundRect(-w / 2, -h / 2, w, h, 18); node.fill();
+      node.strokeColor = reached ? this.hexToColor(rank.bd, 255) : new Color(120, 120, 140); node.lineWidth = 2; node.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 17); node.stroke();
+      this.label(root, `HallRankRowIcon-${i}`, rank.icon, -w / 2 + 48, y, 52, 52, 32, new Color(255, 255, 255), 'center', 6);
+      this.label(root, `HallRankRowName-${i}`, rank.name, -w / 2 + 96, y + 12, 300, 32, 24, new Color(255, 248, 232), 'left', 6);
+      this.label(root, `HallRankRowReq-${i}`, reached ? '已达成' : `需 ${rank.threshold} 经验`, -w / 2 + 96, y - 22, 300, 24, 14, new Color(235, 230, 210), 'left', 6);
     });
-    this.button(root, 'HallRanksBack', '返回大厅', 0, -250, 200, 52, true);
+    this.button(root, 'HallRanksBack', '返回大厅', 0, -ph / 2 + 44, 220, 50, true);
   }
 
   /** The launch screen intentionally has one clear primary action and lighter secondary actions. */
@@ -678,84 +703,88 @@ export class LearningHall extends Component {
     const profile = this.callbacks!.getProfile();
     const t = this.theme();
     const mask = this.graphics(root, 'HallSettingsMask', 0, 0, 1280, 720, 1);
-    mask.fillColor = new Color(8, 8, 16, 170); mask.rect(-640, -360, 1280, 720); mask.fill();
-    const pw = 560, ph = 540;
+    mask.fillColor = new Color(8, 8, 16, 180); mask.rect(-640, -360, 1280, 720); mask.fill();
+    const pw = 560, ph = 560;
     const panel = this.graphics(root, 'HallSettingsPanel', 0, 0, pw, ph, 3);
-    panel.fillColor = t.card; panel.roundRect(-pw / 2, -ph / 2, pw, ph, 18); panel.fill();
-    panel.strokeColor = t.cardStroke; panel.lineWidth = 3; panel.roundRect(-pw / 2 + 1, -ph / 2 + 1, pw - 2, ph - 2, 16); panel.stroke();
-    this.label(root, 'HallSettingsTitle', '设置', 0, ph / 2 - 34, 400, 34, 22, t.ink, 'center', 6);
+    panel.fillColor = t.night ? new Color(38, 32, 56, 245) : new Color(250, 242, 228, 248);
+    panel.roundRect(-pw / 2, -ph / 2, pw, ph, 22); panel.fill();
+    panel.strokeColor = t.cardStroke; panel.lineWidth = 4; panel.roundRect(-pw / 2 + 2, -ph / 2 + 2, pw - 4, ph - 4, 19); panel.stroke();
+    // 标题 + 金色下划线
+    this.label(root, 'HallSettingsTitle', '设置', 0, ph / 2 - 40, 400, 40, 32, t.ink, 'center', 6);
+    const titleLine = this.graphics(root, 'HallSettingsTitleLine', 0, ph / 2 - 64, 80, 3, 6);
+    titleLine.fillColor = new Color(255, 180, 70, 255); titleLine.roundRect(-40, -1.5, 80, 3, 1.5); titleLine.fill();
 
-    // Section: avatar & nickname
-    this.drawSettingsSection(root, 'HallSetSecProfile', 0, ph / 2 - 116, 520, 132, t);
-    this.label(root, 'HallSetAvatarLabel', '当前头像', -pw / 2 + 68, ph / 2 - 82, 90, 18, 12, t.sub, 'left', 7);
-    const curAv = AVATARS.find(a => a.id === profile.avatarId) ?? AVATARS[0];
-    this.drawAvatarCircle(root, 'HallSetCurAvatar', -pw / 2 + 60, ph / 2 - 132, 28, curAv.emoji, true, t);
-    this.label(root, 'HallSetPickLabel', '选择头像', -pw / 2 + 130, ph / 2 - 82, 90, 18, 12, t.sub, 'left', 7);
+    // Section: avatar picker
+    this.drawSettingsSection(root, 'HallSetSecAvatar', 0, ph / 2 - 126, 520, 90, t);
+    this.label(root, 'HallSetAvatarLabel', '选择头像', -pw / 2 + 70, ph / 2 - 100, 120, 22, 16, t.ink, 'left', 7);
     AVATARS.forEach((av, i) => {
-      const x = -pw / 2 + 148 + i * 58;
-      this.drawAvatarCircle(root, `HallSetAvatar-${i}`, x, ph / 2 - 132, 21, av.emoji, av.id === profile.avatarId, t);
+      const x = -pw / 2 + 110 + i * 74;
+      this.drawAvatarCircle(root, `HallSetAvatar-${i}`, x, ph / 2 - 152, 26, av.emoji, av.id === profile.avatarId, t);
     });
-    this.label(root, 'HallSetNameLabel', '昵称', -pw / 2 + 60, ph / 2 - 178, 80, 20, 14, t.ink, 'left', 7);
-    this.drawNicknameInput(root, profile.playerName, 40, ph / 2 - 178, t);
+
+    // Section: nickname
+    this.drawSettingsSection(root, 'HallSetSecName', 0, ph / 2 - 204, 520, 58, t);
+    this.label(root, 'HallSetNameLabel', '昵称', -pw / 2 + 70, ph / 2 - 204, 60, 24, 16, t.ink, 'left', 7);
+    this.drawNicknameInput(root, profile.playerName, 80, ph / 2 - 204, t);
 
     // Section: sound & display
-    this.drawSettingsSection(root, 'HallSetSecSound', 0, -22, 520, 188, t);
-    this.label(root, 'HallSetSoundTitle', '声音与显示', -pw / 2 + 70, 62, 200, 20, 14, t.ink, 'left', 7);
-    this.drawToggle(root, 'night', '夜间模式', -pw / 2 + 60, 22, profile.nightMode, t);
-    this.drawToggle(root, 'music', '背景音乐', -pw / 2 + 60, -28, profile.musicOn, t);
-    this.drawToggle(root, 'sfx', '音效', -pw / 2 + 60, -78, profile.sfxOn, t);
+    this.drawSettingsSection(root, 'HallSetSecSound', 0, -28, 520, 196, t);
+    this.label(root, 'HallSetSoundTitle', '声音与显示', -pw / 2 + 70, 42, 200, 24, 16, t.ink, 'left', 7);
+    this.drawToggle(root, 'night', '夜间模式', -pw / 2 + 70, 0, profile.nightMode, t);
+    this.drawToggle(root, 'music', '背景音乐', -pw / 2 + 70, -50, profile.musicOn, t);
+    this.drawToggle(root, 'sfx', '音效', -pw / 2 + 70, -100, profile.sfxOn, t);
 
     // Section: about
-    this.drawSettingsSection(root, 'HallSetSecAbout', 0, -166, 520, 76, t);
-    this.label(root, 'HallSetAboutTitle', '关于游戏', -pw / 2 + 70, -142, 200, 18, 13, t.ink, 'left', 7);
-    this.label(root, 'HallSetAboutText', '殷墟甲骨文学习工具 · 开发中\n版本 V3.1 · 新国风探索 RPG', 0, -170, 480, 40, 11, t.sub, 'center', 7);
+    this.drawSettingsSection(root, 'HallSetSecAbout', 0, -166, 520, 80, t);
+    this.label(root, 'HallSetAboutTitle', '关于游戏', -pw / 2 + 70, -142, 200, 20, 14, t.ink, 'left', 7);
+    this.label(root, 'HallSetAboutText', '殷墟甲骨文学习工具 · 开发中\n版本 V3.1 · 新国风探索 RPG', 0, -172, 480, 44, 12, t.sub, 'center', 7);
 
-    this.button(root, 'HallSetBack', '返回大厅', 0, -ph / 2 + 38, 200, 46, true);
+    this.button(root, 'HallSetBack', '返回大厅', 0, -ph / 2 + 42, 220, 50, true);
   }
 
   private drawSettingsSection(root: Node, name: string, x: number, y: number, w: number, h: number, t: ReturnType<LearningHall['theme']>) {
     const sec = this.graphics(root, name, x, y, w, h, 2);
-    sec.fillColor = t.night ? new Color(255, 248, 228, 24) : new Color(110, 76, 40, 24);
-    sec.roundRect(-w / 2, -h / 2, w, h, 12); sec.fill();
-    sec.strokeColor = t.night ? new Color(255, 210, 140, 50) : new Color(110, 76, 40, 46);
-    sec.lineWidth = 1; sec.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 11); sec.stroke();
+    sec.fillColor = t.night ? new Color(255, 248, 228, 18) : new Color(120, 90, 60, 18);
+    sec.roundRect(-w / 2, -h / 2, w, h, 14); sec.fill();
+    sec.strokeColor = t.night ? new Color(255, 210, 140, 55) : new Color(150, 110, 70, 55);
+    sec.lineWidth = 1; sec.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 13); sec.stroke();
   }
 
   private drawAvatarCircle(root: Node, name: string, x: number, y: number, r: number, emoji: string, selected: boolean, t: ReturnType<LearningHall['theme']>) {
-    const node = this.graphics(root, name, x, y, r * 2, r * 2, 5);
-    node.fillColor = new Color(255, 255, 255, selected ? 235 : 190); node.circle(0, 0, r); node.fill();
-    node.strokeColor = selected ? new Color(160, 106, 46) : new Color(180, 170, 160, 180); node.lineWidth = selected ? 3 : 2; node.circle(0, 0, r - 2); node.stroke();
     if (selected) {
-      const ring = this.graphics(root, `${name}Ring`, x, y, (r + 5) * 2, (r + 5) * 2, 4);
-      ring.strokeColor = new Color(255, 207, 133, 160); ring.lineWidth = 2; ring.circle(0, 0, r + 3); ring.stroke();
+      const ring = this.graphics(root, `${name}Ring`, x, y, (r + 6) * 2, (r + 6) * 2, 4);
+      ring.strokeColor = new Color(255, 180, 70, 220); ring.lineWidth = 3; ring.circle(0, 0, r + 4); ring.stroke();
     }
-    this.label(root, `${name}Emoji`, emoji, x, y, r * 2 - 4, r * 2 - 4, r * 1.1, new Color(80, 60, 40), 'center', 6);
+    const node = this.graphics(root, name, x, y, r * 2, r * 2, 5);
+    node.fillColor = new Color(255, 250, 235, 255); node.circle(0, 0, r); node.fill();
+    node.strokeColor = selected ? new Color(180, 120, 50) : new Color(180, 165, 145, 200); node.lineWidth = selected ? 3 : 2; node.circle(0, 0, r - 2); node.stroke();
+    this.label(root, `${name}Emoji`, emoji, x, y, r * 2 - 6, r * 2 - 6, r * 1.2, new Color(100, 70, 40), 'center', 6);
   }
 
   private drawNicknameInput(root: Node, name: string, x: number, y: number, t: ReturnType<LearningHall['theme']>) {
-    const w = 220, h = 34;
+    const w = 240, h = 38;
     const bg = this.graphics(root, 'HallSetNameBg', x, y, w, h, 5);
-    bg.fillColor = new Color(255, 255, 255, 230); bg.roundRect(-w / 2, -h / 2, w, h, h / 2); bg.fill();
-    bg.strokeColor = t.cardStroke; bg.lineWidth = 1; bg.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, h / 2 - 1); bg.stroke();
+    bg.fillColor = new Color(255, 255, 255, 235); bg.roundRect(-w / 2, -h / 2, w, h, h / 2); bg.fill();
+    bg.strokeColor = new Color(200, 160, 100, 220); bg.lineWidth = 2; bg.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, h / 2 - 1); bg.stroke();
     const editNode = new Node('HallSetNameEdit'); editNode.parent = root; editNode.setPosition(x, y, 7);
-    editNode.addComponent(UITransform).setContentSize(w - 16, h - 8);
+    editNode.addComponent(UITransform).setContentSize(w - 20, h - 10);
     const edit = editNode.addComponent(EditBox) as EditBox;
     edit.string = name;
     edit.maxLength = 12;
-    edit.fontSize = 14;
+    edit.fontSize = 16;
     edit.placeholder = '输入昵称';
     edit.inputMode = EditBox.InputMode.SINGLE_LINE;
     edit.editingDidEnded = (editbox: EditBox) => { this.callbacks?.setName(editbox.string); };
   }
 
   private drawToggle(root: Node, key: string, label: string, x: number, y: number, on: boolean, t: ReturnType<LearningHall['theme']>) {
-    this.label(root, `HallSetToggleLabel-${key}`, label, x, y, 160, 24, 14, t.ink, 'left', 6);
-    const bw = 46, bh = 24; const bx = 130;
+    this.label(root, `HallSetToggleLabel-${key}`, label, x, y, 200, 26, 16, t.ink, 'left', 6);
+    const bw = 52, bh = 28; const bx = 138;
     const node = this.graphics(root, `HallSetToggle-${key}`, bx, y, bw, bh, 6);
-    node.fillColor = on ? new Color(200, 80, 60, 255) : new Color(150, 150, 160, 220);
+    node.fillColor = on ? new Color(90, 170, 120, 255) : new Color(160, 160, 170, 220);
     node.roundRect(-bw / 2, -bh / 2, bw, bh, bh / 2); node.fill();
-    const knobR = 9;
-    const knobX = on ? bx + bw / 2 - 11 : bx - bw / 2 + 11;
+    const knobR = 10;
+    const knobX = on ? bx + bw / 2 - 13 : bx - bw / 2 + 13;
     const knob = this.graphics(root, `HallSetToggleKnob-${key}`, knobX, y, knobR * 2, knobR * 2, 7);
     knob.fillColor = new Color(255, 255, 255, 255); knob.circle(0, 0, knobR); knob.fill();
   }
@@ -770,27 +799,27 @@ export class LearningHall extends Component {
     if (this.mode === 'home') {
       if (this.hitCircle(x, y, -16, -6, 72)) { this.callbacks?.enterYinXu(); this.close(); }
       else if (this.hit(x, y, -442, -6, 158, 216)) this.render('ranks');
-      else if (this.hit(x, y, 540, 11, 80, 28)) this.openReviewLibrary();
-      else if (this.hit(x, y, 424, -77, 340, 108)) this.render('codex');
+      else if (this.hit(x, y, 538, 11, 86, 30)) this.openReviewLibrary();
+      else if (this.hit(x, y, 424, -77, 340, 112)) this.render('codex');
       else if (this.hit(x, y, 540, 320, 74, 30)) this.render('parent');
-      else if (this.hit(x, y, -220, -322, 44, 44)) this.render('home');
-      else if (this.hit(x, y, -132, -322, 44, 44)) this.openReviewLibrary();
-      else if (this.hit(x, y, -44, -322, 44, 44)) this.render('codex');
-      else if (this.hit(x, y, 44, -322, 44, 44)) this.render('parent');
-      else if (this.hit(x, y, 132, -322, 44, 44)) this.render('progress');
-      else if (this.hit(x, y, 220, -322, 44, 44)) this.render('settings');
+      else if (this.hit(x, y, -212, -324, 66, 66)) this.render('home');
+      else if (this.hit(x, y, -127, -324, 66, 66)) this.openReviewLibrary();
+      else if (this.hit(x, y, -42, -324, 66, 66)) this.render('codex');
+      else if (this.hit(x, y, 42, -324, 66, 66)) this.render('parent');
+      else if (this.hit(x, y, 127, -324, 66, 66)) this.render('progress');
+      else if (this.hit(x, y, 212, -324, 66, 66)) this.render('settings');
       return;
     }
     if (this.mode === 'ranks') {
-      if (this.hit(x, y, 0, -250, 200, 52)) this.render('home');
+      if (this.hit(x, y, 0, -256, 220, 50)) this.render('home');
       return;
     }
     if (this.mode === 'settings') {
-      AVATARS.forEach((av, i) => { if (this.hit(x, y, -132 + i * 58, 138, 42, 42)) { this.callbacks?.setAvatar(av.id); this.render('settings'); } });
-      if (this.hit(x, y, 130, 22, 46, 24)) { this.callbacks?.toggleNight(); this.render('settings'); }
-      else if (this.hit(x, y, 130, -28, 46, 24)) { this.callbacks?.toggleMusic(); this.render('settings'); }
-      else if (this.hit(x, y, 130, -78, 46, 24)) { this.callbacks?.toggleSfx(); this.render('settings'); }
-      else if (this.hit(x, y, 0, -232, 200, 46)) this.render('home');
+      AVATARS.forEach((av, i) => { if (this.hit(x, y, -170 + i * 74, 128, 56, 56)) { this.callbacks?.setAvatar(av.id); this.render('settings'); } });
+      if (this.hit(x, y, 138, 0, 52, 28)) { this.callbacks?.toggleNight(); this.render('settings'); }
+      else if (this.hit(x, y, 138, -50, 52, 28)) { this.callbacks?.toggleMusic(); this.render('settings'); }
+      else if (this.hit(x, y, 138, -100, 52, 28)) { this.callbacks?.toggleSfx(); this.render('settings'); }
+      else if (this.hit(x, y, 0, -238, 220, 50)) this.render('home');
       return;
     }
     if (this.hit(x, y, 480, 286, 150, 48)) { this.render('home'); return; }
