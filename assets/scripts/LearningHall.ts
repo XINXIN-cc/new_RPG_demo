@@ -757,7 +757,7 @@ export class LearningHall extends Component {
     if (mode === 'settings') { this.drawSettingsPanel(); return; }
     // 错题本 = 家长端功能，后续单独开放，当前显示「功能未完善」
     const root = this.createRoot('HallWrongBook', mode);
-    this.drawHeader(root, '错题本', '家长端功能 · 将随学习报告系统一同开放', true);
+    this.drawHeader(root, '错题本', '', true);
     this.panel(root, 'HallWrongBookPanel', 0, -20, 760, 320, new Color(76, 57, 62), false);
     this.label(root, 'HallWrongBookIcon', '⭐', 0, 78, 96, 96, 52, new Color(255, 233, 176), 'center', 6);
     this.label(root, 'HallWrongBookTip', '功能未完善', 0, -8, 420, 56, 30, new Color(255, 240, 214), 'center', 6);
