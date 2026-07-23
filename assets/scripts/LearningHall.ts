@@ -138,6 +138,14 @@ export class LearningHall extends Component {
     this.render('home');
   }
 
+  openStoryLesson() {
+    this.beginReview();
+  }
+
+  returnToCity() {
+    this.close();
+  }
+
   private cards() {
     return this.callbacks?.getCards() ?? [];
   }

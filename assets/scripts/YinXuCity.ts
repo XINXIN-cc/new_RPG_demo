@@ -29,8 +29,9 @@ import { importedOracleCards } from './data/ImportedOracleCatalog';
 import { DialoguePanel } from './story/DialoguePanel';
 import { QuestGuide } from './story/QuestGuide';
 import { StoryController } from './story/StoryController';
+import { chapterOneDefinition, CHAPTER_ONE_ID, XIAO_SHITOU_POSITION } from './story/ChapterOne';
 import { migrateStorySave } from './story/StoryState';
-import { StorySaveState } from './story/StoryTypes';
+import { StorySaveState, StoryStepDefinition } from './story/StoryTypes';
 
 const { ccclass } = _decorator;
 
@@ -590,6 +591,11 @@ export class YinXuCity extends Component {
   private storyController!: StoryController;
   private storyDialogue!: DialoguePanel;
   private questGuide!: QuestGuide;
+  private storyNpc: Node | null = null;
+  private presentedStoryStepId: string | null = null;
+  private storyArrivalLocked = false;
+  private storyWorldEntered = false;
+  private openedStoryLessonStepId: string | null = null;
 
   onLoad() {
     this.enabled = false;
@@ -706,12 +712,20 @@ export class YinXuCity extends Component {
         if (correct) record.correctCount++;
         this.save.mastery[cardId] = record;
         this.persistCitySave();
+        if (this.storyController?.handle({ type: 'learning-completed', cardId, correct })) {
+          this.scheduleOnce(() => {
+            this.learningHall.returnToCity();
+            this.presentStoryStep(this.storyController.currentStep());
+          }, .08);
+        }
       },
       enterYinXu: () => {
+        this.storyWorldEntered = true;
         this.playerPos.set(0, 20);
         this.cameraPos.set(0, 20);
         this.player?.setPosition(0, 20, 80);
         this.followCamera(1);
+        this.beginChapterOneIfNeeded();
       },
     });
     this.initializeStoryInfrastructure();
@@ -783,18 +797,98 @@ export class YinXuCity extends Component {
     this.updateToolEffects(dt);
     this.statusNoticeTimer = Math.max(0, this.statusNoticeTimer - dt);
     this.followCamera(dt);
+    this.updateChapterOneStory();
     const visibleSize = view.getVisibleSize();
     this.questGuide?.update(dt, this.playerPos, visibleSize.width, visibleSize.height);
     this.updateHud();
   }
 
   private initializeStoryInfrastructure() {
-    this.storyController = new StoryController([], this.save.story, story => {
+    this.storyController = new StoryController([chapterOneDefinition], this.save.story, story => {
       this.save.story = story;
       this.persistCitySave();
     });
     this.storyDialogue = new DialoguePanel(this.node);
     this.questGuide = new QuestGuide(this.world, this.node);
+    this.createChapterOneNpc();
+    this.storyController.subscribe((_snapshot, step) => this.presentStoryStep(step));
+  }
+
+  private beginChapterOneIfNeeded() {
+    const snapshot = this.storyController.snapshot();
+    if (!snapshot.currentChapterId && !snapshot.completedChapterIds.includes(CHAPTER_ONE_ID)) {
+      this.storyController.startChapter(CHAPTER_ONE_ID);
+      return;
+    }
+    this.presentStoryStep(this.storyController.currentStep());
+  }
+
+  private presentStoryStep(step: StoryStepDefinition | null) {
+    if (!this.storyWorldEntered) {
+      this.questGuide.setObjective(null);
+      if (this.storyNpc?.isValid) this.storyNpc.active = false;
+      return;
+    }
+    this.questGuide.setObjective(step?.objective ?? null);
+    const xiaoShitouVisible = step?.id === 'chapter-1-meet-xiaoshitou'
+      || step?.id === 'chapter-1-xiaoshitou-dialogue';
+    if (this.storyNpc?.isValid) this.storyNpc.active = xiaoShitouVisible;
+    this.storyArrivalLocked = false;
+
+    if (step?.id === 'chapter-1-first-lesson' && this.openedStoryLessonStepId !== step.id) {
+      this.openedStoryLessonStepId = step.id;
+      this.scheduleOnce(() => {
+        if (this.storyController.currentStep()?.id === step.id) this.learningHall.openStoryLesson();
+      }, .12);
+    }
+
+    if (!step || !step.dialogue || this.presentedStoryStepId === step.id) return;
+    this.presentedStoryStepId = step.id;
+    this.scheduleOnce(() => {
+      if (this.storyController.currentStep()?.id !== step.id) return;
+      this.storyDialogue.open(step.dialogue ?? [], () => {
+        this.storyController.handle({ type: 'dialogue-completed' });
+      });
+    }, .08);
+  }
+
+  private createChapterOneNpc() {
+    const root = new Node('StoryNpc-XiaoShitou');
+    root.parent = this.world;
+    root.setPosition(XIAO_SHITOU_POSITION.x, XIAO_SHITOU_POSITION.y, 82);
+    root.addComponent(UITransform).setContentSize(44, 60);
+    const shadow = this.localGraphics('StoryNpc-XiaoShitou-Shadow', root, 0, 0, 34, 14, -3);
+    shadow.fillColor = new Color(28, 34, 31, 72);
+    shadow.ellipse(0, 1, 11, 3.5);
+    shadow.fill();
+    const visual = new Node('StoryNpc-XiaoShitou-Sprite');
+    visual.parent = root;
+    visual.setPosition(0, 30, 4);
+    visual.addComponent(UITransform).setContentSize(64, 64);
+    const sprite = visual.addComponent(Sprite);
+    sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+    // Reuse the same pixel-character sheet as the city's authored NPCs so the
+    // story guide cannot drift away from the established game art direction.
+    this.requestSpriteFrame('characters/villager-farmer-v2/down-0/spriteFrame', frame => {
+      if (sprite.isValid) sprite.spriteFrame = frame;
+    });
+    this.createUiLabel(
+      root, 'StoryNpc-XiaoShitou-Name', '小石头',
+      0, 72, 92, 26, 16, new Color(255, 235, 177), 'center', 6,
+    );
+    root.active = false;
+    this.storyNpc = root;
+  }
+
+  private updateChapterOneStory() {
+    const step = this.storyController?.currentStep();
+    if (step?.id !== 'chapter-1-meet-xiaoshitou' || this.storyArrivalLocked) return;
+    const radius = step.objective?.targetRadius ?? 78;
+    const dx = this.playerPos.x - XIAO_SHITOU_POSITION.x;
+    const dy = this.playerPos.y - XIAO_SHITOU_POSITION.y;
+    if (dx * dx + dy * dy > radius * radius) return;
+    this.storyArrivalLocked = true;
+    this.storyController.handle({ type: 'npc-reached', npcId: 'xiaoshitou' });
   }
 
   private buildWorld() {
