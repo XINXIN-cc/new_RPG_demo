@@ -26,6 +26,11 @@ import {
 import { HallCard, LearningHall } from './LearningHall';
 import { LocalSaveDatabase } from './storage/LocalSaveDatabase';
 import { importedOracleCards } from './data/ImportedOracleCatalog';
+import { DialoguePanel } from './story/DialoguePanel';
+import { QuestGuide } from './story/QuestGuide';
+import { StoryController } from './story/StoryController';
+import { migrateStorySave } from './story/StoryState';
+import { StorySaveState } from './story/StoryTypes';
 
 const { ccclass } = _decorator;
 
@@ -118,6 +123,7 @@ type CitySave = {
   ownedProductIds: string[]; equippedShellId: string; placedDecorationIds: string[];
   playerName: string; avatarId: string; avatarUrl?: string; musicOn: boolean; sfxOn: boolean; nightMode: boolean;
   wechats: { nickname: string; avatarUrl?: string }[];
+  story: StorySaveState;
 };
 
 /**
@@ -581,6 +587,9 @@ export class YinXuCity extends Component {
   private decorationNodes = new Map<string, Node>();
   private previewDepthSpot = 0;
   private learningHall!: LearningHall;
+  private storyController!: StoryController;
+  private storyDialogue!: DialoguePanel;
+  private questGuide!: QuestGuide;
 
   onLoad() {
     this.enabled = false;
@@ -705,6 +714,7 @@ export class YinXuCity extends Component {
         this.followCamera(1);
       },
     });
+    this.initializeStoryInfrastructure();
     const previewSearch = (globalThis as { location?: { search?: string } }).location?.search ?? '';
     if (sys.isBrowser && /(?:^|[?&])oracleQa=1(?:&|$)/.test(previewSearch)) {
       this.scheduleOnce(() => this.openOracleQaPreview(), .65);
@@ -713,6 +723,8 @@ export class YinXuCity extends Component {
   }
 
   onDestroy() {
+    this.storyDialogue?.destroy();
+    this.questGuide?.destroy();
     input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this);
     input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
     input.off(Input.EventType.TOUCH_START, this.onTouchStart, this);
@@ -724,7 +736,8 @@ export class YinXuCity extends Component {
   update(dt: number) {
     this.elapsed += dt;
     this.updateCityGameplay(dt);
-    const movementAllowed = this.overlay === 'none' && !this.seated && this.toolActionTimer <= 0 && !this.learningHall?.isOpen;
+    const movementAllowed = this.overlay === 'none' && !this.seated && this.toolActionTimer <= 0
+      && !this.learningHall?.isOpen && !this.storyDialogue?.isOpen;
     const direction = movementAllowed
       ? (this.keyboard.lengthSqr() > 0 ? this.keyboard.clone() : this.stick.clone())
       : new Vec2();
@@ -770,7 +783,18 @@ export class YinXuCity extends Component {
     this.updateToolEffects(dt);
     this.statusNoticeTimer = Math.max(0, this.statusNoticeTimer - dt);
     this.followCamera(dt);
+    const visibleSize = view.getVisibleSize();
+    this.questGuide?.update(dt, this.playerPos, visibleSize.width, visibleSize.height);
     this.updateHud();
+  }
+
+  private initializeStoryInfrastructure() {
+    this.storyController = new StoryController([], this.save.story, story => {
+      this.save.story = story;
+      this.persistCitySave();
+    });
+    this.storyDialogue = new DialoguePanel(this.node);
+    this.questGuide = new QuestGuide(this.world, this.node);
   }
 
   private buildWorld() {
@@ -4454,8 +4478,9 @@ export class YinXuCity extends Component {
     if (databaseSave) {
       return {
         ...databaseSave,
-        version: 2,
+        version: 3,
         wechats: Array.isArray(databaseSave.wechats) ? databaseSave.wechats : [],
+        story: migrateStorySave(databaseSave.story),
       } as CitySave;
     }
 
@@ -4466,7 +4491,7 @@ export class YinXuCity extends Component {
 
   private loadLegacyCitySave(): CitySave {
     const defaults: CitySave = {
-      version: 2,
+      version: 3,
       ink: 8,
       coins: 0,
       experience: 0,
@@ -4483,6 +4508,7 @@ export class YinXuCity extends Component {
       sfxOn: true,
       nightMode: false,
       wechats: [],
+      story: migrateStorySave(null),
     };
     try {
       const raw = sys.localStorage.getItem(this.saveKey);
@@ -4491,7 +4517,7 @@ export class YinXuCity extends Component {
       return {
         ...defaults,
         ...parsed,
-        version: 2,
+        version: 3,
         ink: Math.max(0, Number(parsed.ink ?? defaults.ink)),
         coins: Math.max(0, Number(parsed.coins ?? defaults.coins)),
         experience: Math.max(0, Number(parsed.experience ?? defaults.experience)),
@@ -4505,6 +4531,7 @@ export class YinXuCity extends Component {
         musicOn: typeof parsed.musicOn === 'boolean' ? parsed.musicOn : defaults.musicOn,
         sfxOn: typeof parsed.sfxOn === 'boolean' ? parsed.sfxOn : defaults.sfxOn,
         nightMode: typeof parsed.nightMode === 'boolean' ? parsed.nightMode : defaults.nightMode,
+        story: migrateStorySave(parsed.story),
         // 微信绑定：从单对象旧字段迁移到数组；最多保留 2 个
         wechats: Array.isArray(parsed.wechats)
           ? parsed.wechats.filter((w: any) => w && typeof w.nickname === 'string').slice(0, 2).map((w: any) => ({
