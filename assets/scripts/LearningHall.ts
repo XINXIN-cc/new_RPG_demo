@@ -54,6 +54,8 @@ export type HallCard = {
 type HallMode = 'home' | 'codex' | 'review' | 'reviewResult' | 'progress' | 'parent' | 'parentCenter' | 'bindWechatDialog' | 'unbindWechatDialog' | 'settings' | 'ranks' | 'avatarCrop';
 type HallCallbacks = {
   getCards: () => HallCard[];
+  /** All catalog entries count toward progress, while getCards may hide undiscovered entries. */
+  getCatalogProgress?: () => { collected: number; total: number };
   getProgress: () => { ink: number; coins: number; experience: number; attempts: number; correct: number };
   recordReview: (cardId: string, correct: boolean) => void;
   enterYinXu: () => void;
@@ -109,6 +111,9 @@ export class LearningHall extends Component {
   private readonly cropCenterY = 10;
   private cropDispW = 0;
   private cropDispH = 0;
+  // 图鉴分页
+  private codexPage = 0;
+  private readonly codexPageSize = 8;
 
   get isOpen() {
     return this.root?.isValid ?? false;
@@ -135,6 +140,23 @@ export class LearningHall extends Component {
 
   private cards() {
     return this.callbacks?.getCards() ?? [];
+  }
+
+  private catalogProgress() {
+    const cards = this.cards();
+    return this.callbacks?.getCatalogProgress?.() ?? {
+      collected: cards.filter(card => card.unlocked).length,
+      total: cards.length,
+    };
+  }
+
+  private codexPageCount() {
+    return Math.max(1, Math.ceil(this.cards().length / this.codexPageSize));
+  }
+
+  private codexPageCards() {
+    const start = this.codexPage * this.codexPageSize;
+    return this.cards().slice(start, start + this.codexPageSize);
   }
 
   private progress() {
@@ -290,7 +312,7 @@ export class LearningHall extends Component {
 
   private renderHome() {
     const root = this.createRoot('LearningHall', 'home');
-    const cards = this.cards(); const total = cards.length; const collected = cards.filter(card => card.unlocked).length;
+    const { total, collected } = this.catalogProgress();
     const t = this.theme();
     this.drawTopBar(root, t);
     this.drawCharacterCard(root, -442, -6, t);
@@ -335,7 +357,7 @@ export class LearningHall extends Component {
     let idx = 0;
     for (let i = 0; i < RANKS.length; i++) if (exp >= RANKS[i].threshold) idx = i;
     if (idx === RANKS.length - 1) {
-      const cards = this.cards(); const total = cards.length; const collected = cards.filter(c => c.unlocked).length;
+      const { total, collected } = this.catalogProgress();
       if (collected < total) idx = RANKS.length - 2;
     }
     return idx;
@@ -345,7 +367,7 @@ export class LearningHall extends Component {
     const profile = this.callbacks!.getProfile();
     const progress = this.progress();
     const rankIdx = this.currentRank();
-    const collected = this.cards().filter(c => c.unlocked).length;
+    const { collected } = this.catalogProgress();
     const topY = this.vh(0.445);
     // 头像（直径≈58px），留足右侧空间
     const avR = this.vh(0.040);
@@ -595,7 +617,7 @@ export class LearningHall extends Component {
       // 名字 + 经验需求（对齐 HTML .rinfo，图标右侧垂直居中）
       const nameColor = isCur ? new Color(200, 62, 44) : (t.night ? new Color(255, 240, 214) : new Color(58, 36, 16));
       this.label(root, `HallRankRowName-${i}`, rank.name, -40, y + 3, 220, 24, 15, nameColor, 'left', 6);
-      const req = (i === RANKS.length - 1) ? `收集全部 ${this.cards().length} 个甲骨文字 + 经验12000` : `累计经验 ${rank.threshold}`;
+      const req = (i === RANKS.length - 1) ? `收集全部 ${this.catalogProgress().total} 个甲骨文字 + 经验12000` : `累计经验 ${rank.threshold}`;
       this.label(root, `HallRankRowReq-${i}`, req, -30, y - 15, 240, 20, 10, t.night ? new Color(216, 200, 168) : new Color(106, 74, 42), 'left', 6);
       // 状态（对齐 HTML .rstate：当前红 / 已达成绿 / 未解锁灰）
       const state = isCur ? '当前' : (reached ? '已达成' : '未解锁');
@@ -608,12 +630,15 @@ export class LearningHall extends Component {
 
   private renderCodex(selectedId: string | null) {
     const root = this.createRoot('HallCodex', 'codex');
-    const cards = this.cards(); const unlocked = cards.filter(card => card.unlocked);
     const t = this.theme();
-    this.selectedCardId = selectedId && cards.some(card => card.id === selectedId && card.unlocked) ? selectedId : unlocked[0]?.id ?? null;
-    this.drawHeader(root, '甲骨图鉴', `已收集 ${unlocked.length} / ${cards.length} 个真实甲骨文字`, true);
+    const pageCount = this.codexPageCount();
+    this.codexPage = Math.max(0, Math.min(this.codexPage, pageCount - 1));
+    const pageCards = this.codexPageCards();
+    const pageUnlocked = pageCards.filter(card => card.unlocked);
+    this.selectedCardId = selectedId && pageCards.some(card => card.id === selectedId && card.unlocked) ? selectedId : pageUnlocked[0]?.id ?? null;
+    this.drawHeader(root, '甲骨图鉴', `已收集 ${this.catalogProgress().collected} / ${this.catalogProgress().total} 个真实甲骨文字`, true);
     this.panel(root, 'HallCodexGrid', -190, -30, 760, 480, t.card, false);
-    cards.forEach((card, index) => {
+    pageCards.forEach((card, index) => {
       const x = -430 + (index % 4) * 160; const y = 105 - Math.floor(index / 4) * 200;
       const item = this.graphics(root, `HallCodex-${index}`, x, y, 138, 168, 4);
       if (card.unlocked) {
@@ -631,15 +656,18 @@ export class LearningHall extends Component {
         this.label(root, `HallCodexUnknown-${index}`, '？', x, y - 35, 70, 58, 36, t.night ? new Color(115, 112, 132) : new Color(130, 124, 112));
       }
     });
+    if (this.codexPage > 0) this.button(root, 'HallCodexPrevPage', '上一页', -330, -232, 112, 38, false);
+    this.label(root, 'HallCodexPageLabel', `${this.codexPage + 1} / ${pageCount}`, -190, -232, 120, 28, 16, new Color(255, 235, 190), 'center', 6);
+    if (this.codexPage < pageCount - 1) this.button(root, 'HallCodexNextPage', '下一页', -50, -232, 112, 38, false);
     this.panel(root, 'HallCodexDetail', 405, -30, 330, 480, t.card, false);
-    const selected = cards.find(card => card.id === this.selectedCardId);
+    const selected = pageCards.find(card => card.id === this.selectedCardId);
     if (!selected) {
       this.label(root, 'HallCodexEmpty', '先前往殷墟探索，\n发现第一片甲骨文字吧！', 405, 0, 260, 100, 21, t.goldInk);
       return;
     }
     this.oracleGlyph(root, 'HallCodexSelectedGlyph', selected, 405, 120, 100, 126, 5);
     this.label(root, 'HallCodexSelectedTitle', `${selected.modern}  ·  ${selected.pinyin}`, 405, 38, 278, 38, 26, t.goldInk);
-    this.label(root, 'HallCodexSelectedDetail', `字义：${selected.meaning}\n\n演变：${selected.evolution}\n\n商代生活：${selected.history}`, 405, -120, 270, 270, 16, t.goldSub, 'left');
+    this.label(root, 'HallCodexSelectedDetail', `字义：${selected.meaning}\n\n演变：${selected.evolution}\n\n商代生活：${selected.history}`, 405, -132, 282, 300, 14, t.goldSub, 'left');
   }
 
   private beginReview() {
@@ -728,14 +756,14 @@ export class LearningHall extends Component {
 
   private renderProgress() {
     const root = this.createRoot('HallProgress', 'progress');
-    const cards = this.cards(); const collected = cards.filter(card => card.unlocked).length; const progress = this.progress();
+    const { total, collected } = this.catalogProgress(); const progress = this.progress();
     const t = this.theme();
     this.drawHeader(root, '学习进度', '你的甲骨文字收集与复习记录', true);
     this.panel(root, 'HallProgressPanel', 0, -10, 980, 440, t.card, false);
-    const items: Array<[string, string, string, number]> = [
-      ['收集图鉴', `${collected} / ${cards.length}`, '已发现真实甲骨文字', -310],
-      ['复习答题', `${progress.correct} / ${progress.attempts}`, '累计答对 / 累计作答', 0],
-      ['探索资源', `${progress.ink}`, '当前持有墨料', 310],
+    const items: Array<[string, string, string, number, Color]> = [
+      ['收集图鉴', `${collected} / ${total}`, '已发现真实甲骨文字', -310, new Color(86, 133, 174)],
+      ['复习答题', `${progress.correct} / ${progress.attempts}`, '累计答对 / 累计作答', 0, new Color(180, 105, 61)],
+      ['探索资源', `${progress.ink}`, '当前持有墨料', 310, new Color(104, 145, 99)],
     ];
     items.forEach(([title, value, detail, x]) => {
       const card = this.graphics(root, `HallProgress-${title}`, x, 30, 260, 260, 4);
@@ -1331,7 +1359,9 @@ export class LearningHall extends Component {
     }
     if (this.hit(x, y, 480, 286, 150, 48)) { this.playSfx('back'); this.render('home'); return; }
     if (this.mode === 'codex') {
-      this.cards().forEach((card, index) => {
+      if (this.codexPage > 0 && this.hit(x, y, -330, -232, 112, 38)) { this.playSfx('tap'); this.codexPage--; this.render('codex', null); return; }
+      if (this.codexPage < this.codexPageCount() - 1 && this.hit(x, y, -50, -232, 112, 38)) { this.playSfx('tap'); this.codexPage++; this.render('codex', null); return; }
+      this.codexPageCards().forEach((card, index) => {
         const cardX = -430 + (index % 4) * 160; const cardY = 105 - Math.floor(index / 4) * 200;
         if (card.unlocked && this.hit(x, y, cardX, cardY, 138, 168)) { this.playSfx('tap'); this.render('codex', card.id); }
       });
